@@ -78,6 +78,11 @@ with st.sidebar:
     
     st.markdown("---")
     
+    # Demo limits logic
+    if 'api_calls' not in st.session_state:
+        st.session_state.api_calls = 0
+    MAX_DEMO_CALLS = 5
+    
     app_mode = st.radio(
         "機能を選択:",
         options=[
@@ -91,12 +96,27 @@ with st.sidebar:
     )
     
     st.markdown("---")
-    st.markdown("### Powered by API")
-    st.markdown("このデータを自身のアプリケーションで活用しませんか？")
-    st.markdown(
-        '<a href="https://rapidapi.com/akbkuh00/api/esg-sustainability-score-api/pricing" target="_blank" style="display: block; width: 100%; padding: 10px; background-color: #8e44ad; color: white !important; text-align: center; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 20px;">🚀 商用利用・APIプランを購読する</a>', 
-        unsafe_allow_html=True
-    )
+    if st.session_state.api_calls >= MAX_DEMO_CALLS:
+        st.error(f"⚠️ 無料デモ版の利用制限（{MAX_DEMO_CALLS}回）に達しました。")
+        st.markdown(
+            '<a href="https://rapidapi.com/akbkuh00/api/esg-sustainability-score-api/pricing" target="_blank" style="display: block; width: 100%; padding: 10px; background-color: #e74c3c; color: white !important; text-align: center; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 20px; animation: blinker 1.5s linear infinite;">🚨 無制限プランへアップグレード</a>', 
+            unsafe_allow_html=True
+        )
+        st.markdown("""<style>@keyframes blinker { 50% { opacity: 0.5; } }</style>""", unsafe_allow_html=True)
+    else:
+        st.markdown("### Powered by API")
+        st.markdown("このデータを自身のアプリケーションで活用しませんか？")
+        st.markdown(f"**デモ利用枠:** {MAX_DEMO_CALLS - st.session_state.api_calls}回 残り")
+        st.markdown(
+            '<a href="https://rapidapi.com/akbkuh00/api/esg-sustainability-score-api/pricing" target="_blank" style="display: block; width: 100%; padding: 10px; background-color: #8e44ad; color: white !important; text-align: center; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 10px;">🚀 商用利用・APIプランを購読する</a>', 
+            unsafe_allow_html=True
+        )
+
+def check_limit_and_increment():
+    if st.session_state.api_calls >= MAX_DEMO_CALLS:
+        return False
+    st.session_state.api_calls += 1
+    return True
 
 def call_api(endpoint, method="GET", params=None, json_data=None):
     url = f"https://{RAPIDAPI_HOST}{endpoint}"
@@ -128,6 +148,7 @@ def create_generic_pdf(title, data, mode="generic"):
     title_style = ParagraphStyle('JapaneseTitle', parent=styles['Title'], fontName='HeiseiKakuGo-W5', fontSize=24, spaceAfter=20, textColor=colors.HexColor('#2c3e50'))
     heading_style = ParagraphStyle('JapaneseHeading', parent=styles['Heading2'], fontName='HeiseiKakuGo-W5', fontSize=16, spaceAfter=15, spaceBefore=15, textColor=colors.HexColor('#2980b9'))
     normal_style = ParagraphStyle('JapaneseNormal', parent=styles['Normal'], fontName='HeiseiKakuGo-W5', fontSize=11, leading=16, textColor=colors.HexColor('#34495e'))
+    bullet_style = ParagraphStyle('JapaneseBullet', parent=normal_style, leftIndent=20, bulletIndent=10)
     
     elements = []
     elements.append(Paragraph(f"AI分析レポート: {title}", title_style))
@@ -158,8 +179,40 @@ def create_generic_pdf(title, data, mode="generic"):
         elements.append(Spacer(1, 20))
         elements.append(Paragraph("3. 主要なサステナビリティ活動", heading_style))
         for init in data.get("key_initiatives", []):
-            elements.append(Paragraph(f"・ {init}", normal_style))
+            elements.append(Paragraph(f"・ {init}", bullet_style))
             elements.append(Spacer(1, 5))
+            
+    elif mode == "web_extract" or mode == "niche":
+        elements.append(Paragraph("エグゼクティブ・サマリー", heading_style))
+        if isinstance(data, dict) and 'summary' in data:
+            elements.append(Paragraph(str(data['summary']), normal_style))
+            elements.append(Spacer(1, 15))
+        
+        elements.append(Paragraph("抽出データ詳細", heading_style))
+        if isinstance(data, dict):
+            for key, value in data.items():
+                if key != 'summary':
+                    elements.append(Paragraph(f"<b>{key}</b>:", normal_style))
+                    if isinstance(value, list):
+                        for item in value:
+                            elements.append(Paragraph(f"・ {item}", bullet_style))
+                    else:
+                        elements.append(Paragraph(str(value), normal_style))
+                    elements.append(Spacer(1, 10))
+        else:
+            elements.append(Paragraph(str(data), normal_style))
+            
+    elif mode == "text_to_json":
+        elements.append(Paragraph("構造化データ定義リスト", heading_style))
+        if isinstance(data, dict):
+            for key, value in data.items():
+                elements.append(Paragraph(f"<b>【{key}】</b>", normal_style))
+                formatted_val = str(value) if not isinstance(value, (dict, list)) else json.dumps(value, ensure_ascii=False)
+                elements.append(Paragraph(formatted_val, bullet_style))
+                elements.append(Spacer(1, 10))
+        else:
+            elements.append(Paragraph(str(data), normal_style))
+            
     else:
         # Generic PDF builder for other payloads
         elements.append(Paragraph("解析結果", heading_style))
@@ -191,93 +244,102 @@ def render_pdf_download_button(title, data, mode="generic"):
 
 if app_mode == "🟢 ESG経営分析":
     st.title("🌍 ESG 経営分析ダッシュボード")
-    st.markdown("企業名を入力して、最新のESG評価スコアとサステナビリティに関する主要な取り組みを確認します。")
+    st.markdown("**解決する課題:** 企業のサステナビリティ実績を即座にスコア化し、投資判断やレポート作成を加速します。")
     with st.form(key='esg_form'):
         col1, col2 = st.columns([3, 1])
         company_name = col1.text_input("企業名", placeholder="例：トヨタ自動車、ソニーグループ", label_visibility="collapsed")
         submit_button = col2.form_submit_button(label='🔍 分析を実行', use_container_width=True)
 
     if submit_button and company_name:
-        with st.spinner(f"「{company_name}」のESGデータを分析中..."):
-            data = call_api("/esg-score/", params={"query": company_name})
-            
-            # Using mock data if API key not set and returns generic error message
-            if data and "esg_score" not in data:
-                data = {
-                    "company": company_name,
-                    "esg_score": 85,
-                    "environmental_score": 88,
-                    "social_score": 82,
-                    "governance_score": 85,
-                    "summary": f"{company_name}は環境保護と社会貢献において業界をリードしています。",
-                    "key_initiatives": ["再生可能エネルギー100%達成", "サプライチェーンの人権配慮", "ダイバーシティ推進体制の構築"]
-                }
-            
-            if data:
-                st.success("分析が完了しました！")
+        if not check_limit_and_increment():
+            st.error("デモ利用制限に達しています。サイドバーから無制限プランへアップグレードしてください。")
+        else:
+            with st.spinner(f"AIが「{company_name}」のESG開示情報を深掘りしています..."):
+                data = call_api("/esg-score/", params={"query": company_name})
                 
-                def get_color(score):
-                    if score == "N/A": return "#7f8c8d"
-                    try:
-                        s = float(score)
-                        if s >= 80: return "#27ae60"
-                        elif s >= 60: return "#f39c12"
-                        else: return "#e74c3c"
-                    except: return "#7f8c8d"
+                # Using mock data if API key not set and returns generic error message
+                if data and "esg_score" not in data:
+                    data = {
+                        "company": company_name,
+                        "esg_score": 85,
+                        "environmental_score": 88,
+                        "social_score": 82,
+                        "governance_score": 85,
+                        "summary": f"{company_name}は環境保護と社会貢献において業界をリードしています。",
+                        "key_initiatives": ["再生可能エネルギー100%達成", "サプライチェーンの人権配慮", "ダイバーシティ推進体制の構築"]
+                    }
                 
-                def render_metric(label, value):
-                    color = get_color(value)
-                    return f'''<div class="custom-card" style="text-align: center; padding: 15px; border-left: 5px solid {color}; border-top: 5px solid {color};"><p style="color: #7f8c8d; font-size: 1.1rem; margin-bottom: 5px; font-weight: bold;">{label}</p><h2 style="color: {color}; font-size: 2.8rem; margin: 0;">{value}</h2></div>'''
-
-                st.markdown("## 📊 ESG 評価スコア")
-                c1, c2, c3, c4 = st.columns(4)
-                c1.markdown(render_metric("総合スコア", data.get("esg_score", "N/A")), unsafe_allow_html=True)
-                c2.markdown(render_metric("環境 (E)", data.get("environmental_score", "N/A")), unsafe_allow_html=True)
-                c3.markdown(render_metric("社会 (S)", data.get("social_score", "N/A")), unsafe_allow_html=True)
-                c4.markdown(render_metric("ガバナンス (G)", data.get("governance_score", "N/A")), unsafe_allow_html=True)
-                
-                st.markdown("## 📝 分析エグゼクティブ・サマリー")
-                st.markdown(f'<div class="custom-card"><p class="summary-text">{data.get("summary", "サマリーなし")}</p></div>', unsafe_allow_html=True)
-                
-                st.markdown("## 💡 主要なサステナビリティ活動")
-                initiatives = data.get("key_initiatives", [])
-                if initiatives:
-                    for init in initiatives:
-                        st.markdown(f'<div class="initiative-card"><b>✓</b> {init}</div>', unsafe_allow_html=True)
-                
-                render_pdf_download_button(f"ESG分析 ({company_name})", data, mode="esg")
+                if data:
+                    st.success("分析が完了しました！")
+                    
+                    def get_color(score):
+                        if score == "N/A": return "#7f8c8d"
+                        try:
+                            s = float(score)
+                            if s >= 80: return "#27ae60"
+                            elif s >= 60: return "#f39c12"
+                            else: return "#e74c3c"
+                        except: return "#7f8c8d"
+                    
+                    def render_metric(label, value):
+                        color = get_color(value)
+                        return f'''<div class="custom-card" style="text-align: center; padding: 15px; border-left: 5px solid {color}; border-top: 5px solid {color};"><p style="color: #7f8c8d; font-size: 1.1rem; margin-bottom: 5px; font-weight: bold;">{label}</p><h2 style="color: {color}; font-size: 2.8rem; margin: 0;">{value}</h2></div>'''
+    
+                    st.markdown("## 📊 ESG 評価スコア")
+                    c1, c2, c3, c4 = st.columns(4)
+                    c1.markdown(render_metric("総合スコア", data.get("esg_score", "N/A")), unsafe_allow_html=True)
+                    c2.markdown(render_metric("環境 (E)", data.get("environmental_score", "N/A")), unsafe_allow_html=True)
+                    c3.markdown(render_metric("社会 (S)", data.get("social_score", "N/A")), unsafe_allow_html=True)
+                    c4.markdown(render_metric("ガバナンス (G)", data.get("governance_score", "N/A")), unsafe_allow_html=True)
+                    
+                    st.markdown("## 📝 分析エグゼクティブ・サマリー")
+                    st.markdown(f'<div class="custom-card"><p class="summary-text">{data.get("summary", "サマリーなし")}</p></div>', unsafe_allow_html=True)
+                    
+                    st.markdown("## 💡 主要なサステナビリティ活動")
+                    initiatives = data.get("key_initiatives", [])
+                    if initiatives:
+                        for init in initiatives:
+                            st.markdown(f'<div class="initiative-card"><b>✓</b> {init}</div>', unsafe_allow_html=True)
+                    
+                    render_pdf_download_button(f"ESG分析 ({company_name})", data, mode="esg")
 
 elif app_mode == "🌐 Webデータ抽出":
     st.title("🌐 Webデータ抽出ツール")
-    st.markdown("URLを指定して、対象ページの主要な情報を抽出し要約します。")
+    st.markdown("**解決する課題:** 最新ニュースやWebページから必要な情報・インサイトだけを3秒で高精度に抽出します。")
     with st.form(key='web_form'):
         col1, col2 = st.columns([3, 1])
         url = col1.text_input("抽出対象のURL", placeholder="https://example.com/news/123", label_visibility="collapsed")
         submit_button = col2.form_submit_button(label='⚡ 抽出を実行', use_container_width=True)
 
     if submit_button and url:
-        with st.spinner("Webデータを抽出中..."):
-            data = call_api("/web-extract/", params={"url": url})
-            if data:
-                st.success("抽出完了")
-                st.json(data)
-                render_pdf_download_button("Webデータ抽出結果", data)
+        if not check_limit_and_increment():
+            st.error("デモ利用制限に達しています。サイドバーから無制限プランへアップグレードしてください。")
+        else:
+            with st.spinner("AIが指定されたURLの文脈を読み解き、情報を抽出しています..."):
+                data = call_api("/web-extract/", params={"url": url})
+                if data:
+                    st.success("抽出完了")
+                    st.json(data)
+                    render_pdf_download_button("Webデータ抽出結果", data, mode="web_extract")
 
 elif app_mode == "📊 業界・競合トレンド":
     st.title("📊 業界・競合トレンド分析")
-    st.markdown("特定の業界や競合に関するニッチなデータとトレンドを取得します。")
+    st.markdown("**解決する課題:** 競合他社や特定ニッチ市場の動向データをAIが集約し、戦略立案の土台を提供します。")
     with st.form(key='niche_form'):
         col1, col2 = st.columns([3, 1])
         query = col1.text_input("分析キーワード", placeholder="例：国内EV市場の動向", label_visibility="collapsed")
         submit_button = col2.form_submit_button(label='📈 分析を実行', use_container_width=True)
 
     if submit_button and query:
-        with st.spinner("トレンドデータを取得中..."):
-            data = call_api("/niche-data/", params={"query": query})
-            if data:
-                st.success("分析完了")
-                st.json(data)
-                render_pdf_download_button("業界・競合トレンド", data)
+        if not check_limit_and_increment():
+            st.error("デモ利用制限に達しています。サイドバーから無制限プランへアップグレードしてください。")
+        else:
+            with st.spinner("AIがグローバル・ローカルトレンドを統合分析しています..."):
+                data = call_api("/niche-data/", params={"query": query})
+                if data:
+                    st.success("分析完了")
+                    st.json(data)
+                    render_pdf_download_button("業界・競合トレンド", data, mode="niche")
 
 elif app_mode == "🔗 ウェブフック連携":
     st.title("🔗 ウェブフック連携テスト")
@@ -302,31 +364,37 @@ elif app_mode == "🔗 ウェブフック連携":
 
 elif app_mode == "📑 テキスト構造化 (AI)":
     st.title("📑 テキスト構造化 (AI)")
-    st.markdown("雑多なテキストデータをAIが解析し、構造化されたJSONフォーマットに変換します。")
+    st.markdown("**解決する課題:** 雑多な議事録やメモを、システム連携可能な構造化JSONデータに即座に変換します。")
     with st.form(key='text_to_json_form'):
         text_input = st.text_area("構造化したいテキストを入力", height=150, placeholder="ここに議事録やメモを貼り付けてください...")
         submit_button = st.form_submit_button(label='✨ 構造化を実行', use_container_width=True)
 
     if submit_button and text_input:
-        with st.spinner("テキストを解析・構造化中..."):
-            data = call_api("/text-to-json/", method="POST", json_data={"text": text_input})
-            if data:
-                st.success("構造化完了")
-                st.json(data)
-                render_pdf_download_button("テキスト構造化結果", data)
+        if not check_limit_and_increment():
+            st.error("デモ利用制限に達しています。サイドバーから無制限プランへアップグレードしてください。")
+        else:
+            with st.spinner("AIが非構造化テキストを解析し、綺麗なJSON形式に変換しています..."):
+                data = call_api("/text-to-json/", method="POST", json_data={"text": text_input})
+                if data:
+                    st.success("構造化完了")
+                    st.json(data)
+                    render_pdf_download_button("テキスト構造化結果", data, mode="text_to_json")
 
 elif app_mode == "🔬 汎用データ抽出":
     st.title("🔬 汎用データ抽出 (AI Scrape API)")
-    st.markdown("URLとプロンプトを指定して、ページ内の特定要素を高度にスクレイピングします。")
+    st.markdown("**解決する課題:** 自然言語のプロンプトだけで、あらゆるWebサイトから指定したパラメーターを高精度に抽出します。")
     with st.form(key='scrape_form'):
         scrape_url = st.text_input("対象URL", placeholder="https://example.com/products")
         prompt = st.text_area("抽出プロンプト（何を抽出したいか）", placeholder="例：商品名と価格のリストを抽出してください。")
         submit_button = st.form_submit_button(label='🕷️ スクレイピング実行', use_container_width=True)
 
     if submit_button and scrape_url and prompt:
-        with st.spinner("AIスクレイピングを実行中..."):
-            data = call_api("/ai_scrape_api_v1_ai_scrape_post/", method="POST", json_data={"url": scrape_url, "prompt": prompt})
-            if data:
-                st.success("抽出完了")
-                st.json(data)
-                render_pdf_download_button("汎用データ抽出結果", data)
+        if not check_limit_and_increment():
+            st.error("デモ利用制限に達しています。サイドバーから無制限プランへアップグレードしてください。")
+        else:
+            with st.spinner("AIエージェントがターゲットURLにアクセスし、指定された情報を抽出しています..."):
+                data = call_api("/ai_scrape_api_v1_ai_scrape_post/", method="POST", json_data={"url": scrape_url, "prompt": prompt})
+                if data:
+                    st.success("抽出完了")
+                    st.json(data)
+                    render_pdf_download_button("汎用データ抽出結果", data, mode="generic")
