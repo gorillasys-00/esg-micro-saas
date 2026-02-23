@@ -90,7 +90,7 @@ with st.sidebar:
     st.markdown("### Powered by API")
     st.markdown("このデータを自身のアプリケーションで活用しませんか？")
     st.markdown(
-        '<a href="https://rapidapi.com/" target="_blank" style="display: block; width: 100%; padding: 10px; background-color: #8e44ad; color: white !important; text-align: center; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 20px;">🚀 RapidAPI で購読する</a>', 
+        '<a href="https://rapidapi.com/akbkuh00/api/esg-sustainability-score-api/pricing" target="_blank" style="display: block; width: 100%; padding: 10px; background-color: #8e44ad; color: white !important; text-align: center; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 20px;">🚀 商用利用・APIプランを購読する</a>', 
         unsafe_allow_html=True
     )
 
