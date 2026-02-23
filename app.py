@@ -2,7 +2,15 @@ import streamlit as st
 import requests
 import os
 import json
+import io
 from dotenv import load_dotenv
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.cidfonts import UnicodeCIDFont
+from datetime import datetime
 
 # Load environment variables
 load_dotenv()
@@ -202,6 +210,110 @@ if submit_button and company_name:
                     """, unsafe_allow_html=True)
             else:
                 st.info("特筆すべき取り組みは見つかりませんでした。")
+            
+            # --- PDF Download Section ---
+            st.markdown("---")
+            
+            def create_pdf(data):
+                buffer = io.BytesIO()
+                doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=40, leftMargin=40, topMargin=40, bottomMargin=40)
                 
+                # Register Japanese Font
+                pdfmetrics.registerFont(UnicodeCIDFont('HeiseiKakuGo-W5'))
+                
+                styles = getSampleStyleSheet()
+                title_style = ParagraphStyle(
+                    'JapaneseTitle',
+                    parent=styles['Title'],
+                    fontName='HeiseiKakuGo-W5',
+                    fontSize=24,
+                    spaceAfter=20,
+                    textColor=colors.HexColor('#2c3e50')
+                )
+                heading_style = ParagraphStyle(
+                    'JapaneseHeading',
+                    parent=styles['Heading2'],
+                    fontName='HeiseiKakuGo-W5',
+                    fontSize=16,
+                    spaceAfter=15,
+                    spaceBefore=15,
+                    textColor=colors.HexColor('#2980b9')
+                )
+                normal_style = ParagraphStyle(
+                    'JapaneseNormal',
+                    parent=styles['Normal'],
+                    fontName='HeiseiKakuGo-W5',
+                    fontSize=11,
+                    leading=16,
+                    textColor=colors.HexColor('#34495e')
+                )
+                
+                elements = []
+                
+                # Title
+                elements.append(Paragraph(f"ESG分析報告書: {data.get('company', 'Unknown')}", title_style))
+                elements.append(Paragraph(f"作成日: {datetime.now().strftime('%Y年%m月%d日')}", normal_style))
+                elements.append(Spacer(1, 20))
+                
+                # ESG Scores Section
+                elements.append(Paragraph("1. ESG 評価スコア", heading_style))
+                
+                score_data = [
+                    ['総合スコア', '環境 (E)', '社会 (S)', 'ガバナンス (G)'],
+                    [str(data.get('esg_score', 'N/A')), 
+                     str(data.get('environmental_score', 'N/A')), 
+                     str(data.get('social_score', 'N/A')), 
+                     str(data.get('governance_score', 'N/A'))]
+                ]
+                
+                t = Table(score_data, colWidths=[100, 100, 100, 100])
+                t.setStyle(TableStyle([
+                    ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#f0f2f6')),
+                    ('TEXTCOLOR', (0,0), (-1,0), colors.HexColor('#2c3e50')),
+                    ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+                    ('FONTNAME', (0,0), (-1,-1), 'HeiseiKakuGo-W5'),
+                    ('FONTSIZE', (0,0), (-1,0), 12),
+                    ('FONTSIZE', (0,1), (-1,-1), 16),
+                    ('BOTTOMPADDING', (0,0), (-1,0), 12),
+                    ('TOPPADDING', (0,1), (-1,-1), 12),
+                    ('BOTTOMPADDING', (0,1), (-1,-1), 12),
+                    ('BOX', (0,0), (-1,-1), 1, colors.HexColor('#bdc3c7')),
+                    ('GRID', (0,0), (-1,-1), 1, colors.HexColor('#bdc3c7')),
+                    ('TEXTCOLOR', (0,1), (0,1), colors.HexColor('#27ae60')), # Total score color logic can be improved, but hardcoded green for simplicity
+                ]))
+                elements.append(t)
+                elements.append(Spacer(1, 20))
+                
+                # Summary Section
+                elements.append(Paragraph("2. エグゼクティブ・サマリー", heading_style))
+                elements.append(Paragraph(data.get("summary", "サマリー情報はありません。"), normal_style))
+                elements.append(Spacer(1, 20))
+                
+                # Initiatives Section
+                elements.append(Paragraph("3. 主要なサステナビリティ活動", heading_style))
+                initiatives = data.get("key_initiatives", [])
+                if initiatives:
+                    for init in initiatives:
+                        elements.append(Paragraph(f"・ {init}", normal_style))
+                        elements.append(Spacer(1, 5))
+                else:
+                    elements.append(Paragraph("特筆すべき取り組みは見つかりませんでした。", normal_style))
+                
+                # Build PDF
+                doc.build(elements)
+                pdf_bytes = buffer.getvalue()
+                buffer.close()
+                return pdf_bytes
+            
+            pdf_data = create_pdf(data)
+            
+            st.download_button(
+                label="📄 診断レポート(PDF)をダウンロード",
+                data=pdf_data,
+                file_name=f"esg_report_{company_name}.pdf",
+                mime="application/pdf",
+                use_container_width=True
+            )
+            
 elif submit_button:
     st.warning("企業名を入力してください。")
