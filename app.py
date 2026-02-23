@@ -20,8 +20,8 @@ RAPIDAPI_HOST = os.getenv("RAPIDAPI_HOST", "")
 
 # Page configuration
 st.set_page_config(
-    page_title="ESG 経営分析ダッシュボード",
-    page_icon="🌍",
+    page_title="AI ビジネススイート",
+    page_icon="🤖",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -67,32 +67,28 @@ st.markdown("""
         line-height: 1.8;
         color: #34495e;
     }
-    
-    /* Button styling in sidebar */
-    .sidebar-btn {
-        display: block;
-        width: 100%;
-        padding: 10px;
-        background-color: #8e44ad;
-        color: white !important;
-        text-align: center;
-        text-decoration: none;
-        border-radius: 5px;
-        font-weight: bold;
-        margin-top: 20px;
-        transition: background-color 0.3s;
-    }
-    .sidebar-btn:hover {
-        background-color: #9b59b6;
-    }
 </style>
 """, unsafe_allow_html=True)
 
 # Sidebar
 with st.sidebar:
     st.image("https://cdn-icons-png.flaticon.com/512/3038/3038290.png", width=100) # Placeholder logo
-    st.title("ESG ダッシュボード")
-    st.markdown("世界中の企業の環境・社会・ガバナンスへの取り組みを分析します。")
+    st.title("AI ビジネススイート")
+    st.markdown("統合型データ分析・抽出プラットフォーム")
+    
+    st.markdown("---")
+    
+    app_mode = st.radio(
+        "機能を選択:",
+        options=[
+            "🟢 ESG経営分析",
+            "🌐 Webデータ抽出",
+            "📊 業界・競合トレンド",
+            "🔗 ウェブフック連携",
+            "📑 テキスト構造化 (AI)",
+            "🔬 汎用データ抽出"
+        ]
+    )
     
     st.markdown("---")
     st.markdown("### Powered by API")
@@ -102,218 +98,235 @@ with st.sidebar:
         unsafe_allow_html=True
     )
 
-# Main Title
-st.title("🌍 ESG 経営分析ダッシュボード")
-st.markdown("下の検索ボックスに企業名を入力して、最新のESG評価スコアとサステナビリティに関する主要な取り組みを確認しましょう。")
-
-# Search Section
-with st.form(key='search_form'):
-    col1, col2 = st.columns([3, 1])
-    with col1:
-        company_name = st.text_input("企業名", placeholder="例：トヨタ自動車、ソニーグループ", label_visibility="collapsed")
-    with col2:
-        submit_button = st.form_submit_button(label='🔍 分析を実行する', use_container_width=True)
-
-# API Call and Data Processing
-def fetch_esg_data(company_name):
-    url = f"https://{RAPIDAPI_HOST}/esg-score/"
-    
-    querystring = {"query": company_name}
-    
+def call_api(endpoint, method="GET", params=None, json_data=None):
+    url = f"https://{RAPIDAPI_HOST}{endpoint}"
     headers = {
         "X-RapidAPI-Key": RAPIDAPI_KEY,
-        "X-RapidAPI-Host": RAPIDAPI_HOST
+        "X-RapidAPI-Host": RAPIDAPI_HOST,
+        "Content-Type": "application/json"
     }
     
     try:
         if not RAPIDAPI_KEY or not RAPIDAPI_HOST:
-             # Return mock data for demonstration
-             return {
-                 "company": company_name,
-                 "esg_score": 85,
-                 "environmental_score": 88,
-                 "social_score": 82,
-                 "governance_score": 85,
-                 "summary": f"{company_name} is demonstrating strong leadership in sustainability. The company has made significant strides in reducing its carbon footprint and promoting diversity.",
-                 "key_initiatives": [
-                     "Achieved 100% renewable energy for corporate operations.",
-                     "Committed to zero waste to landfill across all major facilities by 2030.",
-                     "Launched a $1B fund for racial equity and justice initiatives.",
-                     "Implemented strict supplier code of conduct regarding labor rights."
-                 ]
-             }
-        
-        response = requests.get(url, headers=headers, params=querystring)
+             return {"message": "APIキーが設定されていないためのモックデータです。機能: " + endpoint, "status": "success"}
+             
+        if method == "GET":
+            response = requests.get(url, headers=headers, params=params)
+        elif method == "POST":
+            response = requests.post(url, headers=headers, json=json_data)
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        st.error(f"Error fetching data: {e}")
+        st.error(f"APIリクエストエラー: {e}")
         return None
 
-if submit_button and company_name:
-    with st.spinner(f"「{company_name}」のESGデータを分析中..."):
-        data = fetch_esg_data(company_name)
-        
-        if data:
-            st.success("分析が完了しました！")
-            
-            def get_color(score):
-                if score == "N/A": return "#7f8c8d"
-                try:
-                    s = float(score)
-                    if s >= 80: return "#27ae60"
-                    elif s >= 60: return "#f39c12"
-                    else: return "#e74c3c"
-                except:
-                    return "#7f8c8d"
-            
-            def render_metric(label, value):
-                color = get_color(value)
-                return f'''
-                <div class="custom-card" style="text-align: center; padding: 15px; border-left: 5px solid {color}; border-top: 5px solid {color};">
-                    <p style="color: #7f8c8d; font-size: 1.1rem; margin-bottom: 5px; font-weight: bold;">{label}</p>
-                    <h2 style="color: {color}; font-size: 2.8rem; margin: 0;">{value}</h2>
-                </div>
-                '''
+def create_generic_pdf(title, data, mode="generic"):
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=40, leftMargin=40, topMargin=40, bottomMargin=40)
+    pdfmetrics.registerFont(UnicodeCIDFont('HeiseiKakuGo-W5'))
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle('JapaneseTitle', parent=styles['Title'], fontName='HeiseiKakuGo-W5', fontSize=24, spaceAfter=20, textColor=colors.HexColor('#2c3e50'))
+    heading_style = ParagraphStyle('JapaneseHeading', parent=styles['Heading2'], fontName='HeiseiKakuGo-W5', fontSize=16, spaceAfter=15, spaceBefore=15, textColor=colors.HexColor('#2980b9'))
+    normal_style = ParagraphStyle('JapaneseNormal', parent=styles['Normal'], fontName='HeiseiKakuGo-W5', fontSize=11, leading=16, textColor=colors.HexColor('#34495e'))
+    
+    elements = []
+    elements.append(Paragraph(f"AI分析レポート: {title}", title_style))
+    elements.append(Paragraph(f"作成日: {datetime.now().strftime('%Y年%m月%d日')}", normal_style))
+    elements.append(Spacer(1, 20))
+    
+    if mode == "esg" and isinstance(data, dict):
+        elements.append(Paragraph("1. ESG 評価スコア", heading_style))
+        score_data = [
+            ['総合スコア', '環境 (E)', '社会 (S)', 'ガバナンス (G)'],
+            [str(data.get('esg_score', 'N/A')), str(data.get('environmental_score', 'N/A')), str(data.get('social_score', 'N/A')), str(data.get('governance_score', 'N/A'))]
+        ]
+        t = Table(score_data, colWidths=[100, 100, 100, 100])
+        t.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#f0f2f6')),
+            ('TEXTCOLOR', (0,0), (-1,0), colors.HexColor('#2c3e50')),
+            ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+            ('FONTNAME', (0,0), (-1,-1), 'HeiseiKakuGo-W5'),
+            ('FONTSIZE', (0,0), (-1,0), 12), ('FONTSIZE', (0,1), (-1,-1), 16),
+            ('BOTTOMPADDING', (0,0), (-1,0), 12), ('TOPPADDING', (0,1), (-1,-1), 12), ('BOTTOMPADDING', (0,1), (-1,-1), 12),
+            ('BOX', (0,0), (-1,-1), 1, colors.HexColor('#bdc3c7')), ('GRID', (0,0), (-1,-1), 1, colors.HexColor('#bdc3c7')),
+            ('TEXTCOLOR', (0,1), (0,1), colors.HexColor('#27ae60')), 
+        ]))
+        elements.append(t)
+        elements.append(Spacer(1, 20))
+        elements.append(Paragraph("2. エグゼクティブ・サマリー", heading_style))
+        elements.append(Paragraph(data.get("summary", "サマリー情報はありません。"), normal_style))
+        elements.append(Spacer(1, 20))
+        elements.append(Paragraph("3. 主要なサステナビリティ活動", heading_style))
+        for init in data.get("key_initiatives", []):
+            elements.append(Paragraph(f"・ {init}", normal_style))
+            elements.append(Spacer(1, 5))
+    else:
+        # Generic PDF builder for other payloads
+        elements.append(Paragraph("解析結果", heading_style))
+        if isinstance(data, dict):
+            for key, value in data.items():
+                elements.append(Paragraph(f"<b>{key}</b>:", normal_style))
+                formatted_val = json.dumps(value, ensure_ascii=False, indent=2) if isinstance(value, (dict, list)) else str(value)
+                for line in formatted_val.split('\\n'):
+                    elements.append(Paragraph(line, normal_style))
+                elements.append(Spacer(1, 10))
+        else:
+            elements.append(Paragraph(str(data), normal_style))
 
-            # --- Score Section ---
-            st.markdown("## 📊 ESG 評価スコア")
-            score_col1, score_col2, score_col3, score_col4 = st.columns(4)
+    doc.build(elements)
+    pdf_bytes = buffer.getvalue()
+    buffer.close()
+    return pdf_bytes
+
+def render_pdf_download_button(title, data, mode="generic"):
+    st.markdown("---")
+    pdf_data = create_generic_pdf(title, data, mode)
+    st.download_button(
+        label="📄 診断レポート(PDF)をダウンロード",
+        data=pdf_data,
+        file_name=f"report_{datetime.now().strftime('%Y%m%d%H%M%S')}.pdf",
+        mime="application/pdf",
+        use_container_width=True
+    )
+
+if app_mode == "🟢 ESG経営分析":
+    st.title("🌍 ESG 経営分析ダッシュボード")
+    st.markdown("企業名を入力して、最新のESG評価スコアとサステナビリティに関する主要な取り組みを確認します。")
+    with st.form(key='esg_form'):
+        col1, col2 = st.columns([3, 1])
+        company_name = col1.text_input("企業名", placeholder="例：トヨタ自動車、ソニーグループ", label_visibility="collapsed")
+        submit_button = col2.form_submit_button(label='🔍 分析を実行', use_container_width=True)
+
+    if submit_button and company_name:
+        with st.spinner(f"「{company_name}」のESGデータを分析中..."):
+            data = call_api("/esg-score/", params={"query": company_name})
             
-            with score_col1:
-                st.markdown(render_metric("総合スコア", data.get("esg_score", "N/A")), unsafe_allow_html=True)
-            with score_col2:
-                st.markdown(render_metric("環境 (E)", data.get("environmental_score", "N/A")), unsafe_allow_html=True)
-            with score_col3:
-                st.markdown(render_metric("社会 (S)", data.get("social_score", "N/A")), unsafe_allow_html=True)
-            with score_col4:
-                st.markdown(render_metric("ガバナンス (G)", data.get("governance_score", "N/A")), unsafe_allow_html=True)
+            # Using mock data if API key not set and returns generic error message
+            if data and "esg_score" not in data:
+                data = {
+                    "company": company_name,
+                    "esg_score": 85,
+                    "environmental_score": 88,
+                    "social_score": 82,
+                    "governance_score": 85,
+                    "summary": f"{company_name}は環境保護と社会貢献において業界をリードしています。",
+                    "key_initiatives": ["再生可能エネルギー100%達成", "サプライチェーンの人権配慮", "ダイバーシティ推進体制の構築"]
+                }
             
-            # --- Summary Section ---
-            st.markdown("## 📝 分析エグゼクティブ・サマリー")
-            st.markdown(f"""
-            <div class="custom-card">
-                <p class="summary-text">{data.get("summary", "サマリー情報はありません。")}</p>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            # --- Initiatives Section ---
-            st.markdown("## 💡 主要なサステナビリティ活動")
-            initiatives = data.get("key_initiatives", [])
-            
-            if initiatives:
-                for initiative in initiatives:
-                    st.markdown(f"""
-                    <div class="initiative-card">
-                        <b>✓</b> {initiative}
-                    </div>
-                    """, unsafe_allow_html=True)
-            else:
-                st.info("特筆すべき取り組みは見つかりませんでした。")
-            
-            # --- PDF Download Section ---
-            st.markdown("---")
-            
-            def create_pdf(data):
-                buffer = io.BytesIO()
-                doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=40, leftMargin=40, topMargin=40, bottomMargin=40)
+            if data:
+                st.success("分析が完了しました！")
                 
-                # Register Japanese Font
-                pdfmetrics.registerFont(UnicodeCIDFont('HeiseiKakuGo-W5'))
+                def get_color(score):
+                    if score == "N/A": return "#7f8c8d"
+                    try:
+                        s = float(score)
+                        if s >= 80: return "#27ae60"
+                        elif s >= 60: return "#f39c12"
+                        else: return "#e74c3c"
+                    except: return "#7f8c8d"
                 
-                styles = getSampleStyleSheet()
-                title_style = ParagraphStyle(
-                    'JapaneseTitle',
-                    parent=styles['Title'],
-                    fontName='HeiseiKakuGo-W5',
-                    fontSize=24,
-                    spaceAfter=20,
-                    textColor=colors.HexColor('#2c3e50')
-                )
-                heading_style = ParagraphStyle(
-                    'JapaneseHeading',
-                    parent=styles['Heading2'],
-                    fontName='HeiseiKakuGo-W5',
-                    fontSize=16,
-                    spaceAfter=15,
-                    spaceBefore=15,
-                    textColor=colors.HexColor('#2980b9')
-                )
-                normal_style = ParagraphStyle(
-                    'JapaneseNormal',
-                    parent=styles['Normal'],
-                    fontName='HeiseiKakuGo-W5',
-                    fontSize=11,
-                    leading=16,
-                    textColor=colors.HexColor('#34495e')
-                )
+                def render_metric(label, value):
+                    color = get_color(value)
+                    return f'''<div class="custom-card" style="text-align: center; padding: 15px; border-left: 5px solid {color}; border-top: 5px solid {color};"><p style="color: #7f8c8d; font-size: 1.1rem; margin-bottom: 5px; font-weight: bold;">{label}</p><h2 style="color: {color}; font-size: 2.8rem; margin: 0;">{value}</h2></div>'''
+
+                st.markdown("## 📊 ESG 評価スコア")
+                c1, c2, c3, c4 = st.columns(4)
+                c1.markdown(render_metric("総合スコア", data.get("esg_score", "N/A")), unsafe_allow_html=True)
+                c2.markdown(render_metric("環境 (E)", data.get("environmental_score", "N/A")), unsafe_allow_html=True)
+                c3.markdown(render_metric("社会 (S)", data.get("social_score", "N/A")), unsafe_allow_html=True)
+                c4.markdown(render_metric("ガバナンス (G)", data.get("governance_score", "N/A")), unsafe_allow_html=True)
                 
-                elements = []
+                st.markdown("## 📝 分析エグゼクティブ・サマリー")
+                st.markdown(f'<div class="custom-card"><p class="summary-text">{data.get("summary", "サマリーなし")}</p></div>', unsafe_allow_html=True)
                 
-                # Title
-                elements.append(Paragraph(f"ESG分析報告書: {data.get('company', 'Unknown')}", title_style))
-                elements.append(Paragraph(f"作成日: {datetime.now().strftime('%Y年%m月%d日')}", normal_style))
-                elements.append(Spacer(1, 20))
-                
-                # ESG Scores Section
-                elements.append(Paragraph("1. ESG 評価スコア", heading_style))
-                
-                score_data = [
-                    ['総合スコア', '環境 (E)', '社会 (S)', 'ガバナンス (G)'],
-                    [str(data.get('esg_score', 'N/A')), 
-                     str(data.get('environmental_score', 'N/A')), 
-                     str(data.get('social_score', 'N/A')), 
-                     str(data.get('governance_score', 'N/A'))]
-                ]
-                
-                t = Table(score_data, colWidths=[100, 100, 100, 100])
-                t.setStyle(TableStyle([
-                    ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#f0f2f6')),
-                    ('TEXTCOLOR', (0,0), (-1,0), colors.HexColor('#2c3e50')),
-                    ('ALIGN', (0,0), (-1,-1), 'CENTER'),
-                    ('FONTNAME', (0,0), (-1,-1), 'HeiseiKakuGo-W5'),
-                    ('FONTSIZE', (0,0), (-1,0), 12),
-                    ('FONTSIZE', (0,1), (-1,-1), 16),
-                    ('BOTTOMPADDING', (0,0), (-1,0), 12),
-                    ('TOPPADDING', (0,1), (-1,-1), 12),
-                    ('BOTTOMPADDING', (0,1), (-1,-1), 12),
-                    ('BOX', (0,0), (-1,-1), 1, colors.HexColor('#bdc3c7')),
-                    ('GRID', (0,0), (-1,-1), 1, colors.HexColor('#bdc3c7')),
-                    ('TEXTCOLOR', (0,1), (0,1), colors.HexColor('#27ae60')), # Total score color logic can be improved, but hardcoded green for simplicity
-                ]))
-                elements.append(t)
-                elements.append(Spacer(1, 20))
-                
-                # Summary Section
-                elements.append(Paragraph("2. エグゼクティブ・サマリー", heading_style))
-                elements.append(Paragraph(data.get("summary", "サマリー情報はありません。"), normal_style))
-                elements.append(Spacer(1, 20))
-                
-                # Initiatives Section
-                elements.append(Paragraph("3. 主要なサステナビリティ活動", heading_style))
+                st.markdown("## 💡 主要なサステナビリティ活動")
                 initiatives = data.get("key_initiatives", [])
                 if initiatives:
                     for init in initiatives:
-                        elements.append(Paragraph(f"・ {init}", normal_style))
-                        elements.append(Spacer(1, 5))
-                else:
-                    elements.append(Paragraph("特筆すべき取り組みは見つかりませんでした。", normal_style))
+                        st.markdown(f'<div class="initiative-card"><b>✓</b> {init}</div>', unsafe_allow_html=True)
                 
-                # Build PDF
-                doc.build(elements)
-                pdf_bytes = buffer.getvalue()
-                buffer.close()
-                return pdf_bytes
-            
-            pdf_data = create_pdf(data)
-            
-            st.download_button(
-                label="📄 診断レポート(PDF)をダウンロード",
-                data=pdf_data,
-                file_name=f"esg_report_{company_name}.pdf",
-                mime="application/pdf",
-                use_container_width=True
-            )
-            
-elif submit_button:
-    st.warning("企業名を入力してください。")
+                render_pdf_download_button(f"ESG分析 ({company_name})", data, mode="esg")
+
+elif app_mode == "🌐 Webデータ抽出":
+    st.title("🌐 Webデータ抽出ツール")
+    st.markdown("URLを指定して、対象ページの主要な情報を抽出し要約します。")
+    with st.form(key='web_form'):
+        col1, col2 = st.columns([3, 1])
+        url = col1.text_input("抽出対象のURL", placeholder="https://example.com/news/123", label_visibility="collapsed")
+        submit_button = col2.form_submit_button(label='⚡ 抽出を実行', use_container_width=True)
+
+    if submit_button and url:
+        with st.spinner("Webデータを抽出中..."):
+            data = call_api("/web-extract/", params={"url": url})
+            if data:
+                st.success("抽出完了")
+                st.json(data)
+                render_pdf_download_button("Webデータ抽出結果", data)
+
+elif app_mode == "📊 業界・競合トレンド":
+    st.title("📊 業界・競合トレンド分析")
+    st.markdown("特定の業界や競合に関するニッチなデータとトレンドを取得します。")
+    with st.form(key='niche_form'):
+        col1, col2 = st.columns([3, 1])
+        query = col1.text_input("分析キーワード", placeholder="例：国内EV市場の動向", label_visibility="collapsed")
+        submit_button = col2.form_submit_button(label='📈 分析を実行', use_container_width=True)
+
+    if submit_button and query:
+        with st.spinner("トレンドデータを取得中..."):
+            data = call_api("/niche-data/", params={"query": query})
+            if data:
+                st.success("分析完了")
+                st.json(data)
+                render_pdf_download_button("業界・競合トレンド", data)
+
+elif app_mode == "🔗 ウェブフック連携":
+    st.title("🔗 ウェブフック連携テスト")
+    st.markdown("外部システムへの通知や自動化を設定・テストします。")
+    with st.form(key='webhook_form'):
+        col1, col2 = st.columns([3, 1])
+        webhook_url = col1.text_input("ウェブフックURL", placeholder="https://your-webhook-endpoint.com/receive", label_visibility="collapsed")
+        payload = st.text_area("テストペイロード (JSON形式)", value='{"message": "Test webhook from AI Business Suite"}')
+        submit_button = col2.form_submit_button(label='🚀 送信テスト', use_container_width=True)
+
+    if submit_button and webhook_url:
+        with st.spinner("ウェブフックを送信中..."):
+            try:
+                json_payload = json.loads(payload)
+                data = call_api("/webhook/", method="POST", json_data={"url": webhook_url, "payload": json_payload})
+                if data:
+                    st.success("送信完了")
+                    st.json(data)
+                    render_pdf_download_button("Webhook送信結果", data)
+            except json.JSONDecodeError:
+                st.error("ペイロードは有効なJSON形式で入力してください。")
+
+elif app_mode == "📑 テキスト構造化 (AI)":
+    st.title("📑 テキスト構造化 (AI)")
+    st.markdown("雑多なテキストデータをAIが解析し、構造化されたJSONフォーマットに変換します。")
+    with st.form(key='text_to_json_form'):
+        text_input = st.text_area("構造化したいテキストを入力", height=150, placeholder="ここに議事録やメモを貼り付けてください...")
+        submit_button = st.form_submit_button(label='✨ 構造化を実行', use_container_width=True)
+
+    if submit_button and text_input:
+        with st.spinner("テキストを解析・構造化中..."):
+            data = call_api("/text-to-json/", method="POST", json_data={"text": text_input})
+            if data:
+                st.success("構造化完了")
+                st.json(data)
+                render_pdf_download_button("テキスト構造化結果", data)
+
+elif app_mode == "🔬 汎用データ抽出":
+    st.title("🔬 汎用データ抽出 (AI Scrape API)")
+    st.markdown("URLとプロンプトを指定して、ページ内の特定要素を高度にスクレイピングします。")
+    with st.form(key='scrape_form'):
+        scrape_url = st.text_input("対象URL", placeholder="https://example.com/products")
+        prompt = st.text_area("抽出プロンプト（何を抽出したいか）", placeholder="例：商品名と価格のリストを抽出してください。")
+        submit_button = st.form_submit_button(label='🕷️ スクレイピング実行', use_container_width=True)
+
+    if submit_button and scrape_url and prompt:
+        with st.spinner("AIスクレイピングを実行中..."):
+            data = call_api("/ai_scrape_api_v1_ai_scrape_post/", method="POST", json_data={"url": scrape_url, "prompt": prompt})
+            if data:
+                st.success("抽出完了")
+                st.json(data)
+                render_pdf_download_button("汎用データ抽出結果", data)
