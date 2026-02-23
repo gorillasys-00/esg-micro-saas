@@ -128,7 +128,8 @@ def call_api(endpoint, method="GET", params=None, json_data=None):
     
     try:
         if not RAPIDAPI_KEY or not RAPIDAPI_HOST:
-             return {"message": "APIキーが設定されていないためのモックデータです。機能: " + endpoint, "status": "success"}
+             st.error("APIキーまたはホストが設定されていません。.envファイルと環境変数を確認してください。")
+             return None
              
         if method == "GET":
             response = requests.get(url, headers=headers, params=params)
@@ -257,19 +258,7 @@ if app_mode == "🟢 ESG経営分析":
             with st.spinner(f"AIが「{company_name}」のESG開示情報を深掘りしています..."):
                 data = call_api("/esg-score/", params={"query": company_name})
                 
-                # Using mock data if API key not set and returns generic error message
-                if data and "esg_score" not in data:
-                    data = {
-                        "company": company_name,
-                        "esg_score": 85,
-                        "environmental_score": 88,
-                        "social_score": 82,
-                        "governance_score": 85,
-                        "summary": f"{company_name}は環境保護と社会貢献において業界をリードしています。",
-                        "key_initiatives": ["再生可能エネルギー100%達成", "サプライチェーンの人権配慮", "ダイバーシティ推進体制の構築"]
-                    }
-                
-                if data:
+                if data and "esg_score" in data:
                     st.success("分析が完了しました！")
                     
                     def get_color(score):
