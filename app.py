@@ -99,7 +99,7 @@ with st.sidebar:
     if st.session_state.api_calls >= MAX_DEMO_CALLS:
         st.error(f"⚠️ 無料デモ版の利用制限（{MAX_DEMO_CALLS}回）に達しました。")
         st.markdown(
-            '<a href="https://rapidapi.com/akbkuh00/api/esg-sustainability-score-api/pricing" target="_blank" style="display: block; width: 100%; padding: 10px; background-color: #e74c3c; color: white !important; text-align: center; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 20px; animation: blinker 1.5s linear infinite;">🚨 無制限プランへアップグレード</a>', 
+            '<a href="https://rapidapi.com/akbkuh00/api/esg-sustainability-score-api/pricing" target="_blank" style="display: block; width: 100%; padding: 10px; background-color: #e74c3c; color: white !important; text-align: center; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 20px; animation: blinker 1.5s linear infinite;">🚀 プレミアムプラン（月額）へアップグレード</a>', 
             unsafe_allow_html=True
         )
         st.markdown("""<style>@keyframes blinker { 50% { opacity: 0.5; } }</style>""", unsafe_allow_html=True)
@@ -253,7 +253,7 @@ if app_mode == "🟢 ESG経営分析":
 
     if submit_button and company_name:
         if not check_limit_and_increment():
-            st.error("デモ利用制限に達しています。サイドバーから無制限プランへアップグレードしてください。")
+            st.error("デモ利用制限に達しています。サイドバーからプレミアムプランへアップグレードしてください。")
         else:
             with st.spinner(f"AIが「{company_name}」のESG開示情報を深掘りしています..."):
                 data = call_api("/esg-score", params={"query": company_name})
@@ -302,7 +302,7 @@ elif app_mode == "🌐 Webデータ抽出":
 
     if submit_button and url:
         if not check_limit_and_increment():
-            st.error("デモ利用制限に達しています。サイドバーから無制限プランへアップグレードしてください。")
+            st.error("デモ利用制限に達しています。サイドバーからプレミアムプランへアップグレードしてください。")
         else:
             with st.spinner("AIが指定されたURLの文脈を読み解き、情報を抽出しています..."):
                 data = call_api("/web-extract", params={"url": url})
@@ -321,7 +321,7 @@ elif app_mode == "📊 業界・競合トレンド":
 
     if submit_button and query:
         if not check_limit_and_increment():
-            st.error("デモ利用制限に達しています。サイドバーから無制限プランへアップグレードしてください。")
+            st.error("デモ利用制限に達しています。サイドバーからプレミアムプランへアップグレードしてください。")
         else:
             with st.spinner("AIがグローバル・ローカルトレンドを統合分析しています..."):
                 data = call_api("/niche-data", params={"query": query})
@@ -360,7 +360,7 @@ elif app_mode == "📑 テキスト構造化 (AI)":
 
     if submit_button and text_input:
         if not check_limit_and_increment():
-            st.error("デモ利用制限に達しています。サイドバーから無制限プランへアップグレードしてください。")
+            st.error("デモ利用制限に達しています。サイドバーからプレミアムプランへアップグレードしてください。")
         else:
             with st.spinner("AIが非構造化テキストを解析し、綺麗なJSON形式に変換しています..."):
                 data = call_api("/text-to-json", method="POST", json_data={"text": text_input})
@@ -379,7 +379,7 @@ elif app_mode == "🔬 汎用データ抽出":
 
     if submit_button and scrape_url and prompt:
         if not check_limit_and_increment():
-            st.error("デモ利用制限に達しています。サイドバーから無制限プランへアップグレードしてください。")
+            st.error("デモ利用制限に達しています。サイドバーからプレミアムプランへアップグレードしてください。")
         else:
             with st.spinner("AIエージェントがターゲットURLにアクセスし、指定された情報を抽出しています..."):
                 data = call_api("/ai_scrape_api_v1_ai_scrape_post", method="POST", json_data={"url": scrape_url, "prompt": prompt})
