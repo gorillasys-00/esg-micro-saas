@@ -24,7 +24,7 @@ st.set_page_config(
     page_title="AI ビジネススイート",
     page_icon="🤖",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="auto",
 )
 
 # Custom CSS for modern design
@@ -62,25 +62,6 @@ st.markdown("""
         opacity: 1 !important;
     }
 
-    /* Hide Streamlit elements */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    
-    /* サイドバーを閉じるボタン（✕）を消去 */
-    button[data-testid="sidebar-close-button"],
-    [data-testid="stSidebar"] button[kind="header"],
-    [data-testid="stSidebarCollapseButton"] {
-        display: none !important;
-    }
-    
-    /* ユーザーがサイドバーを閉じられないようにする */
-    [data-testid="stSidebar"][aria-expanded="false"] {
-        margin-left: 0px !important;
-        transform: translateX(0px) !important;
-        visibility: visible !important;
-    }
-    
     /* Headers */
     h1, h2, h3 {
         font-family: 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif !important;
