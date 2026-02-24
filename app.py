@@ -1,4 +1,4 @@
-# version: 1.1.6 - final_production_ready
+# version: 1.1.7 - fix_json_schema
 import streamlit as st
 import requests
 import os
