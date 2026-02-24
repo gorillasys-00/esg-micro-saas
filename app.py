@@ -73,10 +73,10 @@ st.markdown("""
         padding-top: env(safe-area-inset-top) !important;
     }
     
-    /* Force hamburger menu icon color (Header should be dark grey, Sidebar close button should be white) */
-    header button svg, button[kind="header"] svg {
-        fill: #333333 !important;
-        color: #333333 !important;
+    /* Force hamburger menu icon color (Header/collapsed should be theme color, Sidebar close button should be white) */
+    header button svg, button[kind="header"] svg, [data-testid="collapsedControl"] svg {
+        fill: #4F46E5 !important;
+        color: #4F46E5 !important;
     }
     [data-testid="stSidebar"] button svg {
         fill: #FFFFFF !important;
