@@ -62,22 +62,35 @@ st.markdown("""
         opacity: 1 !important;
     }
 
-    /* Hide Streamlit elements *except* header on mobile so hamburger menu works */
+    /* Hide Streamlit elements */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     
-    /* Mobile header visibility, z-index, and notch support */
-    header {
-        background-color: #ffffff !important;
+    /* ヘッダーという箱を絶対に見せる */
+    header, header[data-testid="stHeader"] {
+        visibility: visible !important;
+        background-color: rgba(255, 255, 255, 0.8) !important;
         z-index: 999999 !important;
         padding-top: env(safe-area-inset-top) !important;
     }
-    
-    /* Force hamburger menu icon color (Header/collapsed should be theme color, Sidebar close button should be white) */
-    header button svg, button[kind="header"] svg, [data-testid="collapsedControl"] svg {
-        fill: #4F46E5 !important;
+
+    /* サイドバー開閉ボタンを絶対に見せる */
+    button[data-testid="collapsedControl"],
+    button[kind="header"] {
+        visibility: visible !important;
+        display: flex !important;
         color: #4F46E5 !important;
     }
+
+    /* アイコンのSVGに直接色を塗りつぶす */
+    button[kind="header"] svg,
+    button[data-testid="collapsedControl"] svg {
+        fill: #4F46E5 !important;
+        width: 30px !important;
+        height: 30px !important;
+    }
+
+    /* Sidebar Close Button */
     [data-testid="stSidebar"] button svg {
         fill: #FFFFFF !important;
         color: #FFFFFF !important;
