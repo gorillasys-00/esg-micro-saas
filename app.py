@@ -1,4 +1,4 @@
-# version: 1.1.7 - fix_json_schema
+# version: 1.1.8 - implement_caching
 import streamlit as st
 import requests
 import os
