@@ -1,4 +1,4 @@
-# version: 1.1.5 - fix_api_params
+# version: 1.1.6 - final_production_ready
 import streamlit as st
 import requests
 import os
@@ -652,11 +652,16 @@ elif app_mode == "ウェブフック連携":
         with st.spinner("ウェブフックを送信中..."):
             try:
                 json_payload = json.loads(payload)
-                data = call_api("/webhook", method="POST", json_data={"url": webhook_url, "payload": json_payload})
-                if data:
-                    res_obj = {"status": "送信成功：ステータス200", "sent_data": json_payload, "response": data}
+                response = requests.post(webhook_url, json=json_payload, timeout=20)
+                
+                if response.status_code in (200, 201, 202):
+                    res_obj = {"status": f"送信成功：ステータス{response.status_code}", "sent_data": json_payload, "response": response.text[:200]}
                     st.session_state.webhook_result = res_obj
-                    st.success("送信成功：ステータス200")
+                    st.success(f"送信成功：ステータス{response.status_code}")
+                else:
+                    st.error(f"送信失敗：ステータス{response.status_code} - 詳細はレスポンスを確認してください。")
+            except requests.exceptions.RequestException as e:
+                st.error(f"通信エラーが発生しました: {e}")
             except json.JSONDecodeError:
                 st.error("ペイロードは有効なJSON形式で入力してください。")
 
