@@ -168,7 +168,17 @@ with st.sidebar:
     )
     
     st.markdown("---")
-    if st.session_state.api_calls >= MAX_DEMO_CALLS:
+    
+    # プレミアムプラン向け API Key 入力
+    with st.expander("🔑 プレミアムプランをご購入済みの方"):
+        user_api_key = st.text_input("RapidAPI Keyを入力してください", type="password")
+        st.caption("※RapidAPIで発行された「X-RapidAPI-Key」を入力すると、デモ制限が解除されます。")
+        
+    st.markdown("---")
+    
+    if user_api_key:
+        st.success("✅ プレミアムモード（制限なし）")
+    elif st.session_state.api_calls >= MAX_DEMO_CALLS:
         st.error(f"⚠️ 無料デモ版の利用制限（{MAX_DEMO_CALLS}回）に達しました。")
         st.markdown(
             '<a href="https://rapidapi.com/akbkuh00/api/esg-sustainability-score-api/pricing" target="_blank" style="display: block; width: 100%; padding: 10px; background-color: #e74c3c; color: white !important; text-align: center; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 20px; animation: blinker 1.5s linear infinite;">🚀 プレミアムプラン（月額）へアップグレード</a>', 
@@ -185,6 +195,9 @@ with st.sidebar:
         )
 
 def check_limit_and_increment():
+    if user_api_key:
+        return True # Bypass limit if user provides their own key
+        
     if st.session_state.api_calls >= MAX_DEMO_CALLS:
         return False
     # Increment
@@ -197,15 +210,19 @@ def check_limit_and_increment():
 
 def call_api(endpoint, method="GET", params=None, json_data=None):
     url = f"https://{RAPIDAPI_HOST}/api/v1{endpoint}"
+    
+    # Use user-provided API key if available, otherwise fallback to .env key
+    active_api_key = user_api_key if user_api_key else RAPIDAPI_KEY
+    
     headers = {
-        "X-RapidAPI-Key": RAPIDAPI_KEY,
+        "X-RapidAPI-Key": active_api_key,
         "X-RapidAPI-Host": RAPIDAPI_HOST,
         "Content-Type": "application/json"
     }
     
     try:
-        if not RAPIDAPI_KEY or not RAPIDAPI_HOST:
-             st.error("APIキーまたはホストが設定されていません。.envファイルと環境変数を確認してください。")
+        if not active_api_key or not RAPIDAPI_HOST:
+             st.error("APIキーまたはホストが設定されていません。.envファイルと環境変数を確認するか、サイドバーからAPIキーを入力してください。")
              return None
              
         if method == "GET":
