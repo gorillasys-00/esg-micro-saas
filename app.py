@@ -65,35 +65,20 @@ st.markdown("""
     /* Hide Streamlit elements */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
+    header {visibility: hidden;}
     
-    /* ヘッダーという箱を絶対に見せる */
-    header, header[data-testid="stHeader"] {
+    /* サイドバーを閉じるボタン（✕）を消去 */
+    button[data-testid="sidebar-close-button"],
+    [data-testid="stSidebar"] button[kind="header"],
+    [data-testid="stSidebarCollapseButton"] {
+        display: none !important;
+    }
+    
+    /* ユーザーがサイドバーを閉じられないようにする */
+    [data-testid="stSidebar"][aria-expanded="false"] {
+        margin-left: 0px !important;
+        transform: translateX(0px) !important;
         visibility: visible !important;
-        background-color: rgba(255, 255, 255, 0.8) !important;
-        z-index: 999999 !important;
-        padding-top: env(safe-area-inset-top) !important;
-    }
-
-    /* サイドバー開閉ボタンを絶対に見せる */
-    button[data-testid="collapsedControl"],
-    button[kind="header"] {
-        visibility: visible !important;
-        display: flex !important;
-        color: #4F46E5 !important;
-    }
-
-    /* アイコンのSVGに直接色を塗りつぶす */
-    button[kind="header"] svg,
-    button[data-testid="collapsedControl"] svg {
-        fill: #4F46E5 !important;
-        width: 30px !important;
-        height: 30px !important;
-    }
-
-    /* Sidebar Close Button */
-    [data-testid="stSidebar"] button svg {
-        fill: #FFFFFF !important;
-        color: #FFFFFF !important;
     }
     
     /* Headers */
