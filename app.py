@@ -119,7 +119,7 @@ def check_limit_and_increment():
     return True
 
 def call_api(endpoint, method="GET", params=None, json_data=None):
-    url = f"https://{RAPIDAPI_HOST}{endpoint}"
+    url = f"https://{RAPIDAPI_HOST}/api/v1{endpoint}"
     headers = {
         "X-RapidAPI-Key": RAPIDAPI_KEY,
         "X-RapidAPI-Host": RAPIDAPI_HOST,
@@ -256,7 +256,7 @@ if app_mode == "🟢 ESG経営分析":
             st.error("デモ利用制限に達しています。サイドバーから無制限プランへアップグレードしてください。")
         else:
             with st.spinner(f"AIが「{company_name}」のESG開示情報を深掘りしています..."):
-                data = call_api("/esg-score/", params={"query": company_name})
+                data = call_api("/esg-score", params={"query": company_name})
                 
                 if data and "esg_score" in data:
                     st.success("分析が完了しました！")
@@ -305,7 +305,7 @@ elif app_mode == "🌐 Webデータ抽出":
             st.error("デモ利用制限に達しています。サイドバーから無制限プランへアップグレードしてください。")
         else:
             with st.spinner("AIが指定されたURLの文脈を読み解き、情報を抽出しています..."):
-                data = call_api("/web-extract/", params={"url": url})
+                data = call_api("/web-extract", params={"url": url})
                 if data:
                     st.success("抽出完了")
                     st.json(data)
@@ -324,7 +324,7 @@ elif app_mode == "📊 業界・競合トレンド":
             st.error("デモ利用制限に達しています。サイドバーから無制限プランへアップグレードしてください。")
         else:
             with st.spinner("AIがグローバル・ローカルトレンドを統合分析しています..."):
-                data = call_api("/niche-data/", params={"query": query})
+                data = call_api("/niche-data", params={"query": query})
                 if data:
                     st.success("分析完了")
                     st.json(data)
@@ -343,7 +343,7 @@ elif app_mode == "🔗 ウェブフック連携":
         with st.spinner("ウェブフックを送信中..."):
             try:
                 json_payload = json.loads(payload)
-                data = call_api("/webhook/", method="POST", json_data={"url": webhook_url, "payload": json_payload})
+                data = call_api("/webhook", method="POST", json_data={"url": webhook_url, "payload": json_payload})
                 if data:
                     st.success("送信完了")
                     st.json(data)
@@ -363,7 +363,7 @@ elif app_mode == "📑 テキスト構造化 (AI)":
             st.error("デモ利用制限に達しています。サイドバーから無制限プランへアップグレードしてください。")
         else:
             with st.spinner("AIが非構造化テキストを解析し、綺麗なJSON形式に変換しています..."):
-                data = call_api("/text-to-json/", method="POST", json_data={"text": text_input})
+                data = call_api("/text-to-json", method="POST", json_data={"text": text_input})
                 if data:
                     st.success("構造化完了")
                     st.json(data)
@@ -382,7 +382,7 @@ elif app_mode == "🔬 汎用データ抽出":
             st.error("デモ利用制限に達しています。サイドバーから無制限プランへアップグレードしてください。")
         else:
             with st.spinner("AIエージェントがターゲットURLにアクセスし、指定された情報を抽出しています..."):
-                data = call_api("/ai_scrape_api_v1_ai_scrape_post/", method="POST", json_data={"url": scrape_url, "prompt": prompt})
+                data = call_api("/ai_scrape_api_v1_ai_scrape_post", method="POST", json_data={"url": scrape_url, "prompt": prompt})
                 if data:
                     st.success("抽出完了")
                     st.json(data)
