@@ -44,21 +44,9 @@ st.markdown("""
     /* 1. Sidebar specific styling */
     [data-testid="stSidebar"] {
         padding-top: 2rem !important;
-        background-color: #1E293B !important;
-    }
-    [data-testid="stSidebar"] * {
-        color: #FFFFFF !important;
     }
     
-    /* Radio buttons visibility in sidebar */
-    [data-testid="stSidebar"] div[role="radiogroup"] label {
-        color: #FFFFFF !important;
-    }
-    [data-testid="stSidebar"] div[role="radiogroup"] div[data-baseweb="radio"] div {
-        border-color: #FFFFFF !important;
-    }
-    
-    /* 2. Enforce light background and dark text for inputs */
+    /* 2. Enforce light background for inputs */
     div[data-baseweb="input"] {
         background-color: #ffffff !important;
     }
