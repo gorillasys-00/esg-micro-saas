@@ -30,6 +30,13 @@ st.set_page_config(
 # Custom CSS for custom elements only
 st.markdown("""
 <style>
+    /* サイドバー内の文字を白くして読みやすくする */
+    [data-testid="stSidebar"] .stMarkdown, 
+    [data-testid="stSidebar"] label, 
+    [data-testid="stSidebar"] .stText {
+        color: #FFFFFF !important;
+    }
+    
     /* Custom Cards */
     .custom-card {
         background-color: white;
