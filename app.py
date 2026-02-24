@@ -1,4 +1,4 @@
-# version: 1.1.1 - auth_fix
+# version: 1.1.2 - fix_analysis_timeout
 import streamlit as st
 import requests
 import os
@@ -327,22 +327,27 @@ with st.sidebar:
         )
         st.markdown('</div>', unsafe_allow_html=True)
 
-def check_limit_and_increment():
+def check_limit():
     if st.session_state.api_key_valid:
         return True # Bypass limit if user provides their own key
         
     if st.session_state.api_calls >= MAX_DEMO_CALLS:
         return False
+    return True
+
+def consume_demo_call():
+    if st.session_state.api_key_valid:
+        return
     # Increment
     new_count = st.session_state.api_calls + 1
     st.session_state.api_calls = new_count
     # Set cookie (expires in 1 day to reset limits daily if they come back tomorrow, or we can make it longer)
     import datetime as dt
     cookie_manager.set("esg_demo_api_calls", str(new_count), expires_at=dt.datetime.now() + dt.timedelta(days=1))
-    return True
 
 def call_api(endpoint, method="GET", params=None, json_data=None):
-    url = f"https://{RAPIDAPI_HOST}/api/v1{endpoint}"
+    base_url = os.getenv("BACKEND_URL", f"https://{RAPIDAPI_HOST}" if RAPIDAPI_HOST else "https://business-api-backend.onrender.com")
+    url = f"{base_url}/api/v1{endpoint}"
     
     # Use user-provided API key if available, otherwise fallback to .env key
     active_api_key = st.session_state.user_api_key if st.session_state.api_key_valid else RAPIDAPI_KEY
@@ -354,18 +359,28 @@ def call_api(endpoint, method="GET", params=None, json_data=None):
     }
     
     try:
-        if not active_api_key or not RAPIDAPI_HOST:
+        if not active_api_key or not base_url:
              st.error("APIキーまたはホストが設定されていません。.envファイルと環境変数を確認するか、サイドバーからAPIキーを入力してください。")
              return None
              
         if method == "GET":
-            response = requests.get(url, headers=headers, params=params)
+            response = requests.get(url, headers=headers, params=params, timeout=120)
         elif method == "POST":
-            response = requests.post(url, headers=headers, json=json_data)
-        response.raise_for_status()
+            response = requests.post(url, headers=headers, json=json_data, timeout=120)
+            
+        if response.status_code != 200:
+            st.error(f"分析中にエラーが発生しました: ステータス {response.status_code} - {response.text}")
+            return None
+            
         return response.json()
+    except requests.exceptions.Timeout:
+        st.error("分析中にエラーが発生しました: サーバーの応答がタイムアウトしました（最大120秒）。")
+        return None
+    except requests.exceptions.ConnectionError:
+        st.error("分析中にエラーが発生しました: バックエンドサーバーに接続できません。URL設定を確認してください。")
+        return None
     except Exception as e:
-        st.error(f"APIリクエストエラー: {e}")
+        st.error(f"分析中にエラーが発生しました: {e}")
         return None
 
 def create_generic_pdf(title, data, mode="generic"):
@@ -481,13 +496,15 @@ if app_mode == "ESG経営分析":
         submit_button = col2.form_submit_button(label='分析を実行', use_container_width=True)
 
     if submit_button and company_name:
-        if not check_limit_and_increment():
+        if not check_limit():
             st.error("デモ利用制限に達しています。サイドバーからプレミアムプランへアップグレードしてください。")
         else:
+            st.info("AIが分析を実行しています。サーバーの初回起動時は最大1分ほどかかる場合があります...")
             with st.spinner(f"AIが「{company_name}」のESG開示情報を深掘りしています..."):
                 data = call_api("/esg-score", params={"query": company_name})
                 
                 if data and "esg_score" in data:
+                    consume_demo_call()
                     st.success("分析が完了しました。")
                     
                     def get_color(score):
@@ -532,12 +549,14 @@ elif app_mode == "Webデータ抽出":
         submit_button = col2.form_submit_button(label='抽出を実行', use_container_width=True)
 
     if submit_button and url:
-        if not check_limit_and_increment():
+        if not check_limit():
             st.error("デモ利用制限に達しています。サイドバーからプレミアムプランへアップグレードしてください。")
         else:
+            st.info("AIが分析を実行しています。サーバーの初回起動時は最大1分ほどかかる場合があります...")
             with st.spinner("AIが指定されたURLの文脈を読み解き、情報を抽出しています..."):
                 data = call_api("/web-extract", params={"url": url})
                 if data:
+                    consume_demo_call()
                     st.success("抽出完了")
                     st.json(data)
                     render_pdf_download_button("Webデータ抽出結果", data, mode="web_extract")
@@ -553,12 +572,14 @@ elif app_mode == "業界・競合トレンド":
         submit_button = col2.form_submit_button(label='分析を実行', use_container_width=True)
 
     if submit_button and query:
-        if not check_limit_and_increment():
+        if not check_limit():
             st.error("デモ利用制限に達しています。サイドバーからプレミアムプランへアップグレードしてください。")
         else:
+            st.info("AIが分析を実行しています。サーバーの初回起動時は最大1分ほどかかる場合があります...")
             with st.spinner("AIがグローバル・ローカルトレンドを統合分析しています..."):
                 data = call_api("/niche-data", params={"query": query})
                 if data:
+                    consume_demo_call()
                     st.success("分析完了")
                     st.json(data)
                     render_pdf_download_button("業界・競合トレンド", data, mode="niche")
@@ -613,12 +634,14 @@ elif app_mode == "テキスト構造化 (AI)":
         submit_button = st.form_submit_button(label='構造化を実行', use_container_width=True)
 
     if submit_button and text_input:
-        if not check_limit_and_increment():
+        if not check_limit():
             st.error("デモ利用制限に達しています。サイドバーからプレミアムプランへアップグレードしてください。")
         else:
+            st.info("AIが分析を実行しています。サーバーの初回起動時は最大1分ほどかかる場合があります...")
             with st.spinner("AIが非構造化テキストを解析し、綺麗なJSON形式に変換しています..."):
                 data = call_api("/text-to-json", method="POST", json_data={"text": text_input})
                 if data:
+                    consume_demo_call()
                     st.success("構造化完了")
                     st.json(data)
                     render_pdf_download_button("テキスト構造化結果", data, mode="text_to_json")
@@ -646,12 +669,14 @@ elif app_mode == "汎用データ抽出":
         submit_button = st.form_submit_button(label='実行', use_container_width=True)
 
     if submit_button and scrape_url and prompt:
-        if not check_limit_and_increment():
+        if not check_limit():
             st.error("デモ利用制限に達しています。サイドバーからプレミアムプランへアップグレードしてください。")
         else:
+            st.info("AIが分析を実行しています。サーバーの初回起動時は最大1分ほどかかる場合があります...")
             with st.spinner("AIエージェントがターゲットURLにアクセスし、指定された情報を抽出しています..."):
                 data = call_api("/ai_scrape_api_v1_ai_scrape_post", method="POST", json_data={"url": scrape_url, "prompt": prompt})
                 if data:
+                    consume_demo_call()
                     st.success("抽出完了")
                     st.json(data)
                     render_pdf_download_button("汎用データ抽出結果", data, mode="generic")
