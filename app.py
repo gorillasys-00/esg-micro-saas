@@ -1,4 +1,4 @@
-# version: 1.1.2 - fix_analysis_timeout
+# version: 1.1.3 - fix_422_params
 import streamlit as st
 import requests
 import os
@@ -501,7 +501,7 @@ if app_mode == "ESG経営分析":
         else:
             st.info("AIが分析を実行しています。サーバーの初回起動時は最大1分ほどかかる場合があります...")
             with st.spinner(f"AIが「{company_name}」のESG開示情報を深掘りしています..."):
-                data = call_api("/esg-score", params={"query": company_name})
+                data = call_api("/esg-score", params={"company_name": company_name})
                 
                 if data and "esg_score" in data:
                     consume_demo_call()
