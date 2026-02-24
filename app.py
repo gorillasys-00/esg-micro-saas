@@ -32,8 +32,13 @@ st.markdown("""
 <style>
     /* Main background */
     .stApp {
-        background-color: #f0f2f6;
+        background-color: #f8f9fa;
     }
+    
+    /* Hide Streamlit elements */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
     
     /* Headers */
     h1, h2, h3 {
@@ -67,6 +72,23 @@ st.markdown("""
         font-size: 1.1rem;
         line-height: 1.8;
         color: #34495e;
+    }
+
+    /* Buttons */
+    .stButton>button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 10px 24px;
+        font-weight: bold;
+        transition: all 0.3s ease;
+    }
+    .stButton>button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+        color: white;
+        border-color: transparent;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -268,7 +290,9 @@ def render_pdf_download_button(title, data, mode="generic"):
 
 if app_mode == "🟢 ESG経営分析":
     st.title("🌍 ESG 経営分析ダッシュボード")
-    st.markdown("**解決する課題:** 企業のサステナビリティ実績を即座にスコア化し、投資判断やレポート作成を加速します。")
+    st.markdown("**概要:** 企業のサステナビリティ実績を即座にAIスコア化します。")
+    st.info("**💡 活用事例:** サプライチェーン企業のESGリスクのスクリーニング / 投資案件の初期デューデリジェンス資料の作成")
+    st.write("")
     with st.form(key='esg_form'):
         col1, col2 = st.columns([3, 1])
         company_name = col1.text_input("企業名", placeholder="例：トヨタ自動車、ソニーグループ", label_visibility="collapsed")
@@ -317,7 +341,9 @@ if app_mode == "🟢 ESG経営分析":
 
 elif app_mode == "🌐 Webデータ抽出":
     st.title("🌐 Webデータ抽出ツール")
-    st.markdown("**解決する課題:** 最新ニュースやWebページから必要な情報・インサイトだけを3秒で高精度に抽出します。")
+    st.markdown("**概要:** 指定したURLから、AIが意味を理解して必要なビジネスデータだけをピンポイントで抽出します。")
+    st.info("**💡 活用事例:** 競合他社のHPからの役員一覧や資本金データの自動収集 / 特定のニュースサイトからの記事本文だけの抽出")
+    st.write("")
     with st.form(key='web_form'):
         col1, col2 = st.columns([3, 1])
         url = col1.text_input("抽出対象のURL", placeholder="https://example.com/news/123", label_visibility="collapsed")
@@ -336,7 +362,9 @@ elif app_mode == "🌐 Webデータ抽出":
 
 elif app_mode == "📊 業界・競合トレンド":
     st.title("📊 業界・競合トレンド分析")
-    st.markdown("**解決する課題:** 競合他社や特定ニッチ市場の動向データをAIが集約し、戦略立案の土台を提供します。")
+    st.markdown("**概要:** ニッチなキーワードから、世界中の最新ニュースとトレンドをAIが要約・構造化します。")
+    st.info("**💡 活用事例:** 新規事業の企画会議に向けた、特定市場（例：EVバッテリー、アニメ市場）の最新動向レポートの自動生成")
+    st.write("")
     with st.form(key='niche_form'):
         col1, col2 = st.columns([3, 1])
         query = col1.text_input("分析キーワード", placeholder="例：国内EV市場の動向", label_visibility="collapsed")
@@ -356,6 +384,7 @@ elif app_mode == "📊 業界・競合トレンド":
 elif app_mode == "🔗 ウェブフック連携":
     st.title("🔗 ウェブフック連携テスト")
     st.markdown("外部システムへの通知や自動化を設定・テストします。")
+    st.write("")
     with st.form(key='webhook_form'):
         col1, col2 = st.columns([3, 1])
         webhook_url = col1.text_input("ウェブフックURL", placeholder="https://your-webhook-endpoint.com/receive", label_visibility="collapsed")
@@ -376,7 +405,9 @@ elif app_mode == "🔗 ウェブフック連携":
 
 elif app_mode == "📑 テキスト構造化 (AI)":
     st.title("📑 テキスト構造化 (AI)")
-    st.markdown("**解決する課題:** 雑多な議事録やメモを、システム連携可能な構造化JSONデータに即座に変換します。")
+    st.markdown("**概要:** カオスな長文メモや議事録を、開発者やシステムが読み込める綺麗なJSONデータに変換します。")
+    st.info("**💡 活用事例:** 商談の雑多な音声文字起こしデータから、BANT条件（予算・時期など）を自動抽出してCRMへ入力")
+    st.write("")
     with st.form(key='text_to_json_form'):
         text_input = st.text_area("構造化したいテキストを入力", height=150, placeholder="ここに議事録やメモを貼り付けてください...")
         submit_button = st.form_submit_button(label='✨ 構造化を実行', use_container_width=True)
@@ -394,7 +425,8 @@ elif app_mode == "📑 テキスト構造化 (AI)":
 
 elif app_mode == "🔬 汎用データ抽出":
     st.title("🔬 汎用データ抽出 (AI Scrape API)")
-    st.markdown("**解決する課題:** 自然言語のプロンプトだけで、あらゆるWebサイトから指定したパラメーターを高精度に抽出します。")
+    st.markdown("**概要:** 自然言語のプロンプトだけで、あらゆるWebサイトから指定したパラメーターを高精度に抽出します。")
+    st.write("")
     with st.form(key='scrape_form'):
         scrape_url = st.text_input("対象URL", placeholder="https://example.com/products")
         prompt = st.text_area("抽出プロンプト（何を抽出したいか）", placeholder="例：商品名と価格のリストを抽出してください。")
