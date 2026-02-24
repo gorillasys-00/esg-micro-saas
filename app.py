@@ -1,4 +1,4 @@
-# version: 1.1.0 - premium_fix
+# version: 1.1.1 - auth_fix
 import streamlit as st
 import requests
 import os
@@ -220,7 +220,7 @@ st.markdown("""
         line-height: 1.8;
         color: #374151;
     }
-    /* sync_id: 20260224 */
+    /* sync_id: 20260224-2 */
 </style>
 """, unsafe_allow_html=True)
 
@@ -281,7 +281,7 @@ with st.sidebar:
                 headers = {"X-RapidAPI-Key": input_key, "X-RapidAPI-Host": RAPIDAPI_HOST}
                 try:
                     # 空リクエスト代わりに適当なエンドポイントでテスト (401/403判定)
-                    res = requests.get(f"https://{RAPIDAPI_HOST}/api/v1/esg-score", headers=headers, params={"query": "test"})
+                    res = requests.get(f"https://{RAPIDAPI_HOST}/api/v1/esg-score", headers=headers, params={"query": "test"}, timeout=10)
                     if res.status_code in [401, 403]:
                         st.sidebar.error("認証に失敗しました。Keyを再確認してください。")
                         st.session_state.api_key_valid = False
@@ -290,8 +290,14 @@ with st.sidebar:
                         st.session_state.api_key_valid = True
                         st.sidebar.success("認証に成功しました。プレミアム機能が解放されました。")
                         st.rerun()
-                except Exception:
-                    st.sidebar.error("認証に失敗しました。ネットワークを確認してください。")
+                except requests.exceptions.Timeout:
+                    st.sidebar.error("バックエンドサーバーの応答がタイムアウトしました。")
+                    st.session_state.api_key_valid = False
+                except requests.exceptions.ConnectionError:
+                    st.sidebar.error("バックエンドサーバーに接続できません。URL設定を確認してください。")
+                    st.session_state.api_key_valid = False
+                except Exception as e:
+                    st.sidebar.error(f"予期せぬエラーが発生しました: {e}")
                     st.session_state.api_key_valid = False
         elif not input_key and st.session_state.user_api_key:
             st.session_state.user_api_key = ""
