@@ -44,9 +44,18 @@ st.markdown("""
     /* 1. Sidebar specific styling */
     [data-testid="stSidebar"] {
         padding-top: 2rem !important;
+        background-color: #1E293B !important;
     }
     [data-testid="stSidebar"] * {
-        color: #FAFAFA !important;
+        color: #FFFFFF !important;
+    }
+    
+    /* Radio buttons visibility in sidebar */
+    [data-testid="stSidebar"] div[role="radiogroup"] label {
+        color: #FFFFFF !important;
+    }
+    [data-testid="stSidebar"] div[role="radiogroup"] div[data-baseweb="radio"] div {
+        border-color: #FFFFFF !important;
     }
     
     /* 2. Enforce light background and dark text for inputs */
@@ -76,10 +85,14 @@ st.markdown("""
         padding-top: env(safe-area-inset-top) !important;
     }
     
-    /* Force hamburger menu icon color */
+    /* Force hamburger menu icon color (Header should be dark grey, Sidebar close button should be white) */
     header button svg, button[kind="header"] svg {
         fill: #333333 !important;
         color: #333333 !important;
+    }
+    [data-testid="stSidebar"] button svg {
+        fill: #FFFFFF !important;
+        color: #FFFFFF !important;
     }
     
     /* Headers */
