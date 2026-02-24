@@ -62,10 +62,13 @@ st.markdown("""
         opacity: 1 !important;
     }
 
-    /* Hide Streamlit elements */
+    /* Hide Streamlit elements *except* header on mobile so hamburger menu works */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
-    header {visibility: hidden;}
+    /* header is intentionally left visible or styled transparently below to keep the hamburger menu accessible */
+    header {
+        background: transparent !important;
+    }
     
     /* Headers */
     h1, h2, h3 {
@@ -81,6 +84,7 @@ st.markdown("""
         margin-bottom: 20px;
         border-left: 5px solid #2980b9;
         font-family: 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif !important;
+        word-break: break-word; /* Prevent text overflow */
     }
     .custom-card p, .custom-card h2 {
         color: #333333 !important;
@@ -95,6 +99,7 @@ st.markdown("""
         border-left: 4px solid #27ae60;
         font-family: 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif !important;
         color: #333333 !important;
+        word-break: break-word;
     }
     
     /* Summary styling */
@@ -114,6 +119,7 @@ st.markdown("""
         padding: 10px 24px;
         font-weight: bold;
         transition: all 0.3s ease;
+        width: 100%; /* Default to full width for better tapping */
     }
     .stButton>button:hover {
         transform: translateY(-2px);
@@ -121,6 +127,50 @@ st.markdown("""
         color: #FFFFFF !important;
         -webkit-text-fill-color: #FFFFFF !important;
         border-color: transparent !important;
+    }
+    
+    /* 4. Responsive Design (Mobile) */
+    @media (max-width: 768px) {
+        .block-container {
+            padding-top: 2rem !important;
+            padding-bottom: 1rem !important;
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+            max-width: 100% !important;
+        }
+        h1 {
+            font-size: 1.8rem !important;
+            word-break: break-word;
+        }
+        h2 {
+            font-size: 1.5rem !important;
+            word-break: break-word;
+        }
+        h3 {
+            font-size: 1.3rem !important;
+            word-break: break-word;
+        }
+        .custom-card, .initiative-card {
+            padding: 16px !important;
+        }
+        .custom-card h2 {
+            font-size: 2rem !important; /* Scale down metric numbers */
+        }
+        .stButton>button {
+            padding: 12px 20px !important; /* Larger touch target */
+            font-size: 1rem !important;
+        }
+        .summary-text {
+            font-size: 1rem !important;
+        }
+        
+        /* Ensure columns stack or take proper width on mobile */
+        [data-testid="column"] {
+            width: 100% !important;
+            flex: 1 1 100% !important;
+            min-width: 100% !important;
+            margin-bottom: 1rem;
+        }
     }
 </style>
 """, unsafe_allow_html=True)
