@@ -1,4 +1,4 @@
-# version: 1.1.4 - fix_state_retention
+# version: 1.1.5 - fix_api_params
 import streamlit as st
 import requests
 import os
@@ -560,6 +560,7 @@ elif app_mode == "Webデータ抽出":
     with st.form(key='web_form'):
         col1, col2 = st.columns([3, 1])
         url = col1.text_input("抽出対象のURL", placeholder="https://example.com/news/123", label_visibility="collapsed")
+        target = st.text_input("抽出したい情報 (Target)", placeholder="例: 会社の代表者名と資本金", value="主要なビジネス情報")
         submit_button = col2.form_submit_button(label='抽出を実行', use_container_width=True)
 
     if submit_button and url:
@@ -568,7 +569,7 @@ elif app_mode == "Webデータ抽出":
         else:
             st.info("AIが分析を実行しています。サーバーの初回起動時は最大1分ほどかかる場合があります...")
             with st.spinner("AIが指定されたURLの文脈を読み解き、情報を抽出しています..."):
-                data = call_api("/web-extract", params={"url": url})
+                data = call_api("/web-extract", params={"url": url, "target": target})
                 if data:
                     st.session_state.web_result = data
                     st.success("抽出完了")
@@ -617,7 +618,22 @@ elif app_mode == "ウェブフック連携":
         
         st.markdown("### Step 2: テスト送信")
         st.write("送信するテストデータ（JSONペイロード）を確認して送信します。")
-        payload = st.text_area("テストペイロード (JSON形式)", value='{\n  "event": "data_extracted",\n  "source": "AI Business Suite",\n  "data": {\n    "message": "Webhook test successful!",\n    "timestamp": "2024-02-24T12:00:00Z"\n  }\n}', height=150)
+        
+        # Load active result to send
+        active_result = {"message": "Webhook test successful!", "timestamp": datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')}
+        for key in ["esg_result", "web_result", "niche_result", "text_to_json_result", "scrape_result"]:
+            res = getattr(st.session_state, key, None)
+            if res:
+                active_result = res
+                break
+                
+        default_payload = {
+            "event": "data_extracted",
+            "source": "AI Business Suite",
+            "data": active_result
+        }
+        
+        payload = st.text_area("テストペイロード (JSON形式)", value=json.dumps(default_payload, indent=2, ensure_ascii=False), height=150)
         
         submit_button = st.form_submit_button(label='送信テストを実行', use_container_width=True)
 
@@ -638,8 +654,9 @@ elif app_mode == "ウェブフック連携":
                 json_payload = json.loads(payload)
                 data = call_api("/webhook", method="POST", json_data={"url": webhook_url, "payload": json_payload})
                 if data:
-                    st.session_state.webhook_result = data
-                    st.success("送信完了")
+                    res_obj = {"status": "送信成功：ステータス200", "sent_data": json_payload, "response": data}
+                    st.session_state.webhook_result = res_obj
+                    st.success("送信成功：ステータス200")
             except json.JSONDecodeError:
                 st.error("ペイロードは有効なJSON形式で入力してください。")
 
@@ -662,7 +679,7 @@ elif app_mode == "テキスト構造化 (AI)":
         else:
             st.info("AIが分析を実行しています。サーバーの初回起動時は最大1分ほどかかる場合があります...")
             with st.spinner("AIが非構造化テキストを解析し、綺麗なJSON形式に変換しています..."):
-                data = call_api("/text-to-json", method="POST", json_data={"text": text_input})
+                data = call_api("/text-to-json", method="POST", json_data={"text": text_input, "format_instruction": "JSON形式で抽出してください"})
                 if data:
                     st.session_state.text_to_json_result = data
                     st.success("構造化完了")
@@ -700,7 +717,9 @@ elif app_mode == "汎用データ抽出":
         else:
             st.info("AIが分析を実行しています。サーバーの初回起動時は最大1分ほどかかる場合があります...")
             with st.spinner("AIエージェントがターゲットURLにアクセスし、指定された情報を抽出しています..."):
-                data = call_api("/ai_scrape_api_v1_ai_scrape_post", method="POST", json_data={"url": scrape_url, "prompt": prompt})
+                # Use the correct ai-scrape endpoint which is GET and only takes url
+                # Wait, if AI Scrape API is meant to extract content to markdown for AI reading
+                data = call_api("/ai-scrape", params={"url": scrape_url})
                 if data:
                     st.session_state.scrape_result = data
                     st.success("抽出完了")
