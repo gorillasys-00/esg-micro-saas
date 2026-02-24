@@ -1,4 +1,4 @@
-# version: 1.1.8 - implement_caching
+# version: 1.1.9 - ui_enhancement
 import streamlit as st
 import requests
 import os
@@ -615,6 +615,13 @@ elif app_mode == "ウェブフック連携":
     
     with st.form(key='webhook_form'):
         webhook_url = st.text_input("ウェブフックURL", placeholder="https://hooks.zapier.com/hooks/catch/12345/abcde")
+        
+        with st.expander("💡 活用アイデア：こんな使い方ができます"):
+            st.markdown("""
+            - **💬 Slack通知**: 分析完了を即座にチームへ共有
+            - **📊 自動データベース**: スプレッドシートへ自動で調査結果を蓄積
+            - **🤝 CRM連携**: 構造化した商談メモを顧客管理ソフトへ直結
+            """)
         
         st.markdown("### Step 2: テスト送信")
         st.write("送信するテストデータ（JSONペイロード）を確認して送信します。")
