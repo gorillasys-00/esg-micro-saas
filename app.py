@@ -42,6 +42,9 @@ st.markdown("""
     }
     
     /* 1. Sidebar specific styling */
+    [data-testid="stSidebar"] {
+        padding-top: 2rem !important;
+    }
     [data-testid="stSidebar"] * {
         color: #FAFAFA !important;
     }
@@ -65,9 +68,18 @@ st.markdown("""
     /* Hide Streamlit elements *except* header on mobile so hamburger menu works */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
-    /* header is intentionally left visible or styled transparently below to keep the hamburger menu accessible */
+    
+    /* Mobile header visibility, z-index, and notch support */
     header {
-        background: transparent !important;
+        background-color: #ffffff !important;
+        z-index: 999999 !important;
+        padding-top: env(safe-area-inset-top) !important;
+    }
+    
+    /* Force hamburger menu icon color */
+    header button svg, button[kind="header"] svg {
+        fill: #333333 !important;
+        color: #333333 !important;
     }
     
     /* Headers */
