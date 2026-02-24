@@ -383,13 +383,31 @@ elif app_mode == "📊 業界・競合トレンド":
 
 elif app_mode == "🔗 ウェブフック連携":
     st.title("🔗 ウェブフック連携テスト")
-    st.markdown("外部システムへの通知や自動化を設定・テストします。")
-    st.write("")
+    st.markdown("**概要:** ZapierやMake、自社システムへ分析データを自動送信するための機能です。")
+    st.info("**💡 活用事例:** ESG分析結果やスクレイピングデータを、指定したURLへPOST送信して後続のフロー（Slack通知、スプレッドシートへの記録等）をトリガーします。")
+    
+    st.markdown("### Step 1: 送信先URLの設定")
+    st.write("受け取り側のウェブフックURLを入力してください（Zapier, Make, 独自のAPIなど）。")
+    
     with st.form(key='webhook_form'):
-        col1, col2 = st.columns([3, 1])
-        webhook_url = col1.text_input("ウェブフックURL", placeholder="https://your-webhook-endpoint.com/receive", label_visibility="collapsed")
-        payload = st.text_area("テストペイロード (JSON形式)", value='{"message": "Test webhook from AI Business Suite"}')
-        submit_button = col2.form_submit_button(label='🚀 送信テスト', use_container_width=True)
+        webhook_url = st.text_input("ウェブフックURL", placeholder="https://hooks.zapier.com/hooks/catch/12345/abcde")
+        
+        st.markdown("### Step 2: テスト送信")
+        st.write("送信するテストデータ（JSONペイロード）を確認して送信します。")
+        payload = st.text_area("テストペイロード (JSON形式)", value='{\n  "event": "data_extracted",\n  "source": "AI Business Suite",\n  "data": {\n    "message": "Webhook test successful!",\n    "timestamp": "2024-02-24T12:00:00Z"\n  }\n}', height=150)
+        
+        submit_button = st.form_submit_button(label='🚀 送信テストを実行', use_container_width=True)
+
+    with st.expander("👉 送信されるJSONデータ（ペイロード）の構造について"):
+        st.markdown("以下の形式でPOSTリクエストとして送信されます。受け取り側でこの構造をパース（解析）して利用してください。")
+        st.code('''{
+  "url": "指定したウェブフックURL",
+  "payload": {
+    "event": "data_extracted",
+    "source": "AI Business Suite",
+    "data": { ... }
+  }
+}''', language="json")
 
     if submit_button and webhook_url:
         with st.spinner("ウェブフックを送信中..."):
@@ -425,12 +443,25 @@ elif app_mode == "📑 テキスト構造化 (AI)":
 
 elif app_mode == "🔬 汎用データ抽出":
     st.title("🔬 汎用データ抽出 (AI Scrape API)")
-    st.markdown("**概要:** 自然言語のプロンプトだけで、あらゆるWebサイトから指定したパラメーターを高精度に抽出します。")
+    st.markdown("**概要:** 指定したURLから、AIに指示した特定の情報（例：価格一覧、担当者名など）だけをピンポイントで抽出します。")
+    st.info("**💡 活用事例:** 特定の法人URLからの代表者名と資本金の抽出 / ECサイトの商品ページからの価格やスペック情報の取得")
+    
+    with st.expander("📋 よくある抽出の指示例（プロンプト・テンプレート）"):
+        st.markdown("""
+        用途に合わせて以下のプロンプトをコピーしてご利用ください。
+        - **会社概要の取得**: `このページから「会社名」「代表者名」「資本金」「設立年」をJSON形式で抽出してください。`
+        - **商品情報の取得**: `ページ内にある商品の「製品名」「価格」「主な特徴（箇条書き3点）」をJSONで抽出してください。`
+        - **採用情報の取得**: `募集要項から「職種」「給与体系」「必須要件」をJSON形式で抽出してください。`
+        """)
+        
     st.write("")
     with st.form(key='scrape_form'):
-        scrape_url = st.text_input("対象URL", placeholder="https://example.com/products")
-        prompt = st.text_area("抽出プロンプト（何を抽出したいか）", placeholder="例：商品名と価格のリストを抽出してください。")
-        submit_button = st.form_submit_button(label='🕷️ スクレイピング実行', use_container_width=True)
+        st.markdown("### 抽出条件の入力")
+        scrape_url = st.text_input("1. 抽出対象のURL", placeholder="https://example.com/company")
+        prompt = st.text_area("2. 抽出したい情報の指示（プロンプト）", placeholder="例：役員一覧の名前と役職をJSON形式で抽出してください。", height=100)
+        
+        st.markdown("<br>", unsafe_allow_html=True)
+        submit_button = st.form_submit_button(label='🕷️ AIでスクレイピングを実行', use_container_width=True)
 
     if submit_button and scrape_url and prompt:
         if not check_limit_and_increment():
