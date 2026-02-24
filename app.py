@@ -35,6 +35,18 @@ st.markdown("""
         background-color: #f8f9fa;
     }
     
+    /* Enforce light theme text colors to override dark mode */
+    .block-container, p, span, label, div {
+        color: #333333 !important;
+    }
+    
+    /* Enforce light background and dark text for inputs (text inputs, text areas) */
+    .stTextInput>div>div>input, .stTextArea>div>div>textarea {
+        background-color: #ffffff !important;
+        color: #333333 !important;
+        border: 1px solid #cccccc !important;
+    }
+
     /* Hide Streamlit elements */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
@@ -42,7 +54,7 @@ st.markdown("""
     
     /* Headers */
     h1, h2, h3 {
-        color: #2c3e50;
+        color: #2c3e50 !important;
         font-family: 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif !important;
     }
     
@@ -56,6 +68,9 @@ st.markdown("""
         border-left: 5px solid #2980b9;
         font-family: 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif !important;
     }
+    .custom-card p, .custom-card h2 {
+        color: #333333 !important;
+    }
     
     .initiative-card {
         background-color: white;
@@ -65,19 +80,20 @@ st.markdown("""
         margin-bottom: 15px;
         border-left: 4px solid #27ae60;
         font-family: 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif !important;
+        color: #333333 !important;
     }
     
     /* Summary styling */
     .summary-text {
         font-size: 1.1rem;
         line-height: 1.8;
-        color: #34495e;
+        color: #34495e !important;
     }
 
     /* Buttons */
     .stButton>button {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
+        color: white !important;
         border: none;
         border-radius: 8px;
         padding: 10px 24px;
@@ -87,7 +103,7 @@ st.markdown("""
     .stButton>button:hover {
         transform: translateY(-2px);
         box-shadow: 0 6px 15px rgba(0,0,0,0.15);
-        color: white;
+        color: white !important;
         border-color: transparent;
     }
 </style>
