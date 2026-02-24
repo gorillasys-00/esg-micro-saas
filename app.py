@@ -27,46 +27,9 @@ st.set_page_config(
     initial_sidebar_state="auto",
 )
 
-# Custom CSS for modern design
+# Custom CSS for custom elements only
 st.markdown("""
 <style>
-    /* Main background */
-    .stApp {
-        background-color: #f8f9fa;
-    }
-    
-    /* Enforce light theme text colors for main content only */
-    .block-container h1, .block-container h2, .block-container h3, 
-    .block-container p, .block-container span, .block-container label, .block-container div {
-        color: #333333 !important;
-    }
-    
-    /* 1. Sidebar specific styling */
-    [data-testid="stSidebar"] {
-        padding-top: 2rem !important;
-    }
-    
-    /* 2. Enforce light background for inputs */
-    div[data-baseweb="input"] {
-        background-color: #ffffff !important;
-    }
-    input, textarea {
-        background-color: #ffffff !important;
-        color: #333333 !important;
-        -webkit-text-fill-color: #333333 !important;
-    }
-    
-    /* Placeholder text specific styling */
-    ::placeholder {
-        color: #888888 !important;
-        opacity: 1 !important;
-    }
-
-    /* Headers */
-    h1, h2, h3 {
-        font-family: 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif !important;
-    }
-    
     /* Custom Cards */
     .custom-card {
         background-color: white;
@@ -75,11 +38,7 @@ st.markdown("""
         box-shadow: 0 4px 12px rgba(0,0,0,0.08);
         margin-bottom: 20px;
         border-left: 5px solid #2980b9;
-        font-family: 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif !important;
-        word-break: break-word; /* Prevent text overflow */
-    }
-    .custom-card p, .custom-card h2 {
-        color: #333333 !important;
+        word-break: break-word;
     }
     
     .initiative-card {
@@ -89,8 +48,6 @@ st.markdown("""
         box-shadow: 0 4px 8px rgba(0,0,0,0.05);
         margin-bottom: 15px;
         border-left: 4px solid #27ae60;
-        font-family: 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif !important;
-        color: #333333 !important;
         word-break: break-word;
     }
     
@@ -98,71 +55,6 @@ st.markdown("""
     .summary-text {
         font-size: 1.1rem;
         line-height: 1.8;
-        color: #34495e !important;
-    }
-
-    /* 3. Buttons */
-    .stButton>button {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-        color: #FFFFFF !important;
-        -webkit-text-fill-color: #FFFFFF !important;
-        border: none;
-        border-radius: 8px;
-        padding: 10px 24px;
-        font-weight: bold;
-        transition: all 0.3s ease;
-        width: 100%; /* Default to full width for better tapping */
-    }
-    .stButton>button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 15px rgba(0,0,0,0.15) !important;
-        color: #FFFFFF !important;
-        -webkit-text-fill-color: #FFFFFF !important;
-        border-color: transparent !important;
-    }
-    
-    /* 4. Responsive Design (Mobile) */
-    @media (max-width: 768px) {
-        .block-container {
-            padding-top: 2rem !important;
-            padding-bottom: 1rem !important;
-            padding-left: 1rem !important;
-            padding-right: 1rem !important;
-            max-width: 100% !important;
-        }
-        h1 {
-            font-size: 1.8rem !important;
-            word-break: break-word;
-        }
-        h2 {
-            font-size: 1.5rem !important;
-            word-break: break-word;
-        }
-        h3 {
-            font-size: 1.3rem !important;
-            word-break: break-word;
-        }
-        .custom-card, .initiative-card {
-            padding: 16px !important;
-        }
-        .custom-card h2 {
-            font-size: 2rem !important; /* Scale down metric numbers */
-        }
-        .stButton>button {
-            padding: 12px 20px !important; /* Larger touch target */
-            font-size: 1rem !important;
-        }
-        .summary-text {
-            font-size: 1rem !important;
-        }
-        
-        /* Ensure columns stack or take proper width on mobile */
-        [data-testid="column"] {
-            width: 100% !important;
-            flex: 1 1 100% !important;
-            min-width: 100% !important;
-            margin-bottom: 1rem;
-        }
     }
 </style>
 """, unsafe_allow_html=True)
