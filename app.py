@@ -1,4 +1,4 @@
-# version: 1.1.3 - fix_422_params
+# version: 1.1.4 - fix_state_retention
 import streamlit as st
 import requests
 import os
@@ -238,11 +238,20 @@ with st.sidebar:
         
     MAX_DEMO_CALLS = 5
     
-    # Initialize session state for API Key
+    # Initialize session state for API Key and Tools
     if "user_api_key" not in st.session_state:
         st.session_state.user_api_key = ""
     if "api_key_valid" not in st.session_state:
         st.session_state.api_key_valid = False
+        
+    # App State for Results
+    if "esg_result" not in st.session_state: st.session_state.esg_result = None
+    if "esg_company" not in st.session_state: st.session_state.esg_company = ""
+    if "web_result" not in st.session_state: st.session_state.web_result = None
+    if "niche_result" not in st.session_state: st.session_state.niche_result = None
+    if "webhook_result" not in st.session_state: st.session_state.webhook_result = None
+    if "text_to_json_result" not in st.session_state: st.session_state.text_to_json_result = None
+    if "scrape_result" not in st.session_state: st.session_state.scrape_result = None
         
     # Read api_calls from cookies instead of session_state
     current_calls_str = cookie_manager.get("esg_demo_api_calls")
@@ -502,41 +511,46 @@ if app_mode == "ESG経営分析":
             st.info("AIが分析を実行しています。サーバーの初回起動時は最大1分ほどかかる場合があります...")
             with st.spinner(f"AIが「{company_name}」のESG開示情報を深掘りしています..."):
                 data = call_api("/esg-score", params={"company_name": company_name})
-                
                 if data and "esg_score" in data:
-                    consume_demo_call()
+                    st.session_state.esg_result = data
+                    st.session_state.esg_company = company_name
                     st.success("分析が完了しました。")
-                    
-                    def get_color(score):
-                        if score == "N/A": return "#94A3B8"
-                        try:
-                            s = float(score)
-                            if s >= 80: return "#10B981"
-                            elif s >= 60: return "#F59E0B"
-                            else: return "#EF4444"
-                        except: return "#94A3B8"
-                    
-                    def render_metric(label, value):
-                        color = get_color(value)
-                        return f'''<div class="custom-card" style="text-align: center; padding: 15px; border-left: 5px solid {color}; border-top: 5px solid {color};"><p style="color: #6B7280; font-size: 1.1rem; margin-bottom: 5px; font-weight: 500;">{label}</p><h2 style="color: {color}; font-size: 2.8rem; margin: 0; font-weight: 500;">{value}</h2></div>'''
-    
-                    st.markdown("## ESG 評価スコア")
-                    c1, c2, c3, c4 = st.columns(4)
-                    c1.markdown(render_metric("総合スコア", data.get("esg_score", "N/A")), unsafe_allow_html=True)
-                    c2.markdown(render_metric("環境 (E)", data.get("environmental_score", "N/A")), unsafe_allow_html=True)
-                    c3.markdown(render_metric("社会 (S)", data.get("social_score", "N/A")), unsafe_allow_html=True)
-                    c4.markdown(render_metric("ガバナンス (G)", data.get("governance_score", "N/A")), unsafe_allow_html=True)
-                    
-                    st.markdown("## 分析エグゼクティブ・サマリー")
-                    st.markdown(f'<div class="custom-card"><p class="summary-text">{data.get("summary", "サマリーなし")}</p></div>', unsafe_allow_html=True)
-                    
-                    st.markdown("## 主要なサステナビリティ活動")
-                    initiatives = data.get("key_initiatives", [])
-                    if initiatives:
-                        for init in initiatives:
-                            st.markdown(f'<div class="initiative-card"> {init}</div>', unsafe_allow_html=True)
-                    
-                    render_pdf_download_button(f"ESG分析 ({company_name})", data, mode="esg")
+                    consume_demo_call()
+
+    if st.session_state.esg_result:
+        data = st.session_state.esg_result
+        company_name = st.session_state.esg_company
+        
+        def get_color(score):
+            if score == "N/A": return "#94A3B8"
+            try:
+                s = float(score)
+                if s >= 80: return "#10B981"
+                elif s >= 60: return "#F59E0B"
+                else: return "#EF4444"
+            except: return "#94A3B8"
+        
+        def render_metric(label, value):
+            color = get_color(value)
+            return f'''<div class="custom-card" style="text-align: center; padding: 15px; border-left: 5px solid {color}; border-top: 5px solid {color};"><p style="color: #6B7280; font-size: 1.1rem; margin-bottom: 5px; font-weight: 500;">{label}</p><h2 style="color: {color}; font-size: 2.8rem; margin: 0; font-weight: 500;">{value}</h2></div>'''
+
+        st.markdown(f"## {company_name} の ESG 評価スコア")
+        c1, c2, c3, c4 = st.columns(4)
+        c1.markdown(render_metric("総合スコア", data.get("esg_score", "N/A")), unsafe_allow_html=True)
+        c2.markdown(render_metric("環境 (E)", data.get("environmental_score", "N/A")), unsafe_allow_html=True)
+        c3.markdown(render_metric("社会 (S)", data.get("social_score", "N/A")), unsafe_allow_html=True)
+        c4.markdown(render_metric("ガバナンス (G)", data.get("governance_score", "N/A")), unsafe_allow_html=True)
+        
+        st.markdown("## 分析エグゼクティブ・サマリー")
+        st.markdown(f'<div class="custom-card"><p class="summary-text">{data.get("summary", "サマリーなし")}</p></div>', unsafe_allow_html=True)
+        
+        st.markdown("## 主要なサステナビリティ活動")
+        initiatives = data.get("key_initiatives", [])
+        if initiatives:
+            for init in initiatives:
+                st.markdown(f'<div class="initiative-card"> {init}</div>', unsafe_allow_html=True)
+        
+        render_pdf_download_button(f"ESG分析 ({company_name})", data, mode="esg")
 
 elif app_mode == "Webデータ抽出":
     st.title("Webデータ抽出ツール")
@@ -556,10 +570,13 @@ elif app_mode == "Webデータ抽出":
             with st.spinner("AIが指定されたURLの文脈を読み解き、情報を抽出しています..."):
                 data = call_api("/web-extract", params={"url": url})
                 if data:
-                    consume_demo_call()
+                    st.session_state.web_result = data
                     st.success("抽出完了")
-                    st.json(data)
-                    render_pdf_download_button("Webデータ抽出結果", data, mode="web_extract")
+                    consume_demo_call()
+
+    if st.session_state.web_result:
+        st.json(st.session_state.web_result)
+        render_pdf_download_button("Webデータ抽出結果", st.session_state.web_result, mode="web_extract")
 
 elif app_mode == "業界・競合トレンド":
     st.title("業界・競合トレンド分析")
@@ -579,10 +596,13 @@ elif app_mode == "業界・競合トレンド":
             with st.spinner("AIがグローバル・ローカルトレンドを統合分析しています..."):
                 data = call_api("/niche-data", params={"query": query})
                 if data:
-                    consume_demo_call()
+                    st.session_state.niche_result = data
                     st.success("分析完了")
-                    st.json(data)
-                    render_pdf_download_button("業界・競合トレンド", data, mode="niche")
+                    consume_demo_call()
+
+    if st.session_state.niche_result:
+        st.json(st.session_state.niche_result)
+        render_pdf_download_button("業界・競合トレンド", st.session_state.niche_result, mode="niche")
 
 elif app_mode == "ウェブフック連携":
     st.title("ウェブフック連携テスト")
@@ -618,11 +638,14 @@ elif app_mode == "ウェブフック連携":
                 json_payload = json.loads(payload)
                 data = call_api("/webhook", method="POST", json_data={"url": webhook_url, "payload": json_payload})
                 if data:
+                    st.session_state.webhook_result = data
                     st.success("送信完了")
-                    st.json(data)
-                    render_pdf_download_button("Webhook送信結果", data)
             except json.JSONDecodeError:
                 st.error("ペイロードは有効なJSON形式で入力してください。")
+
+    if st.session_state.webhook_result:
+        st.json(st.session_state.webhook_result)
+        render_pdf_download_button("Webhook送信結果", st.session_state.webhook_result)
 
 elif app_mode == "テキスト構造化 (AI)":
     st.title("テキスト構造化 (AI)")
@@ -641,10 +664,13 @@ elif app_mode == "テキスト構造化 (AI)":
             with st.spinner("AIが非構造化テキストを解析し、綺麗なJSON形式に変換しています..."):
                 data = call_api("/text-to-json", method="POST", json_data={"text": text_input})
                 if data:
-                    consume_demo_call()
+                    st.session_state.text_to_json_result = data
                     st.success("構造化完了")
-                    st.json(data)
-                    render_pdf_download_button("テキスト構造化結果", data, mode="text_to_json")
+                    consume_demo_call()
+
+    if st.session_state.text_to_json_result:
+        st.json(st.session_state.text_to_json_result)
+        render_pdf_download_button("テキスト構造化結果", st.session_state.text_to_json_result, mode="text_to_json")
 
 elif app_mode == "汎用データ抽出":
     st.title("汎用データ抽出 (AI Scrape API)")
@@ -676,7 +702,10 @@ elif app_mode == "汎用データ抽出":
             with st.spinner("AIエージェントがターゲットURLにアクセスし、指定された情報を抽出しています..."):
                 data = call_api("/ai_scrape_api_v1_ai_scrape_post", method="POST", json_data={"url": scrape_url, "prompt": prompt})
                 if data:
-                    consume_demo_call()
+                    st.session_state.scrape_result = data
                     st.success("抽出完了")
-                    st.json(data)
-                    render_pdf_download_button("汎用データ抽出結果", data, mode="generic")
+                    consume_demo_call()
+
+    if st.session_state.scrape_result:
+        st.json(st.session_state.scrape_result)
+        render_pdf_download_button("汎用データ抽出結果", st.session_state.scrape_result, mode="generic")
