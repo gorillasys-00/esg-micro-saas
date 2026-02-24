@@ -11,6 +11,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.cidfonts import UnicodeCIDFont
 from datetime import datetime
+import extra_streamlit_components as stx
 
 # Load environment variables
 load_dotenv()
@@ -78,10 +79,27 @@ with st.sidebar:
     
     st.markdown("---")
     
-    # Demo limits logic
-    if 'api_calls' not in st.session_state:
-        st.session_state.api_calls = 0
+    # Cookie Manager for persistent demo limits
+    cookie_manager = stx.CookieManager()
+
+    # Wait for cookies to load
+    if not cookie_manager.get_all():
+        pass # Wait one cycle if not ready
+        
     MAX_DEMO_CALLS = 5
+    
+    # Read api_calls from cookies instead of session_state
+    current_calls_str = cookie_manager.get("esg_demo_api_calls")
+    if current_calls_str is None:
+        api_calls_count = 0
+    else:
+        try:
+            api_calls_count = int(current_calls_str)
+        except:
+            api_calls_count = 0
+            
+    # Keep it in session state for easy access during the run
+    st.session_state.api_calls = api_calls_count
     
     app_mode = st.radio(
         "機能を選択:",
@@ -115,7 +133,12 @@ with st.sidebar:
 def check_limit_and_increment():
     if st.session_state.api_calls >= MAX_DEMO_CALLS:
         return False
-    st.session_state.api_calls += 1
+    # Increment
+    new_count = st.session_state.api_calls + 1
+    st.session_state.api_calls = new_count
+    # Set cookie (expires in 1 day to reset limits daily if they come back tomorrow, or we can make it longer)
+    import datetime as dt
+    cookie_manager.set("esg_demo_api_calls", str(new_count), expires_at=dt.datetime.now() + dt.timedelta(days=1))
     return True
 
 def call_api(endpoint, method="GET", params=None, json_data=None):
