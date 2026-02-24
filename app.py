@@ -35,16 +35,31 @@ st.markdown("""
         background-color: #f8f9fa;
     }
     
-    /* Enforce light theme text colors to override dark mode */
-    .block-container, p, span, label, div {
+    /* Enforce light theme text colors for main content only */
+    .block-container h1, .block-container h2, .block-container h3, 
+    .block-container p, .block-container span, .block-container label, .block-container div {
         color: #333333 !important;
     }
     
-    /* Enforce light background and dark text for inputs (text inputs, text areas) */
-    .stTextInput>div>div>input, .stTextArea>div>div>textarea {
+    /* 1. Sidebar specific styling */
+    [data-testid="stSidebar"] * {
+        color: #FAFAFA !important;
+    }
+    
+    /* 2. Enforce light background and dark text for inputs */
+    div[data-baseweb="input"] {
+        background-color: #ffffff !important;
+    }
+    input, textarea {
         background-color: #ffffff !important;
         color: #333333 !important;
-        border: 1px solid #cccccc !important;
+        -webkit-text-fill-color: #333333 !important;
+    }
+    
+    /* Placeholder text specific styling */
+    ::placeholder {
+        color: #888888 !important;
+        opacity: 1 !important;
     }
 
     /* Hide Streamlit elements */
@@ -54,7 +69,6 @@ st.markdown("""
     
     /* Headers */
     h1, h2, h3 {
-        color: #2c3e50 !important;
         font-family: 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif !important;
     }
     
@@ -90,10 +104,11 @@ st.markdown("""
         color: #34495e !important;
     }
 
-    /* Buttons */
+    /* 3. Buttons */
     .stButton>button {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white !important;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        color: #FFFFFF !important;
+        -webkit-text-fill-color: #FFFFFF !important;
         border: none;
         border-radius: 8px;
         padding: 10px 24px;
@@ -102,9 +117,10 @@ st.markdown("""
     }
     .stButton>button:hover {
         transform: translateY(-2px);
-        box-shadow: 0 6px 15px rgba(0,0,0,0.15);
-        color: white !important;
-        border-color: transparent;
+        box-shadow: 0 6px 15px rgba(0,0,0,0.15) !important;
+        color: #FFFFFF !important;
+        -webkit-text-fill-color: #FFFFFF !important;
+        border-color: transparent !important;
     }
 </style>
 """, unsafe_allow_html=True)
