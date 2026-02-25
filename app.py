@@ -1,4 +1,4 @@
-# version: 1.1.9 - ui_enhancement
+# version: 1.2.0 - implement_server_side_ip_limit
 import streamlit as st
 import requests
 import os
@@ -376,6 +376,14 @@ def call_api(endpoint, method="GET", params=None, json_data=None):
             response = requests.get(url, headers=headers, params=params, timeout=120)
         elif method == "POST":
             response = requests.post(url, headers=headers, json=json_data, timeout=120)
+            
+        if response.status_code == 429:
+            st.error("🚨 無料デモ版の利用制限（5回）に達しました。")
+            st.markdown(
+                '<a href="https://rapidapi.com/akbkuh00/api/esg-sustainability-score-api/pricing" target="_blank" class="custom-api-btn">プレミアムプランへアップグレードして制限を解除</a>', 
+                unsafe_allow_html=True
+            )
+            return None
             
         if response.status_code != 200:
             st.error(f"分析中にエラーが発生しました: ステータス {response.status_code} - {response.text}")
